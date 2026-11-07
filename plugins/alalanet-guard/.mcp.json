@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "alalanet": { "type": "http", "url": "https://alalanet.com/mcp" }
+  }
+}
