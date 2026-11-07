@@ -25,7 +25,7 @@ sha256sum skills/alalanet-check-before-you-pay/SKILL.md
 curl -s https://alalanet.com/v1/artifacts/<sha256>    # advice: signed_by_alalanet
 ```
 
-Anything else (`unknown_artifact`, a different publisher, a conflict) means the file is not ours.
+Anything else (`unknown_hash`, a different publisher, `caution_conflicting`) means the file is not ours. The repository always holds the latest signed version; the live copy is <https://alalanet.com/skill.md>.
 
 ## License
 
