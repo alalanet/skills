@@ -1,14 +1,25 @@
 {
   "name": "alalanet",
-  "owner": { "name": "alalanet", "url": "https://alalanet.com" },
+  "owner": {
+    "name": "alalanet",
+    "url": "https://alalanet.com"
+  },
   "description": "alalanet: check what your agent installs and what it pays. Signed verdicts in a public transparency log.",
   "plugins": [
     {
       "name": "alalanet-guard",
       "source": "./plugins/alalanet-guard",
-      "description": "Checks every npm/PyPI/MCP/skill install your agent is about to run (known malicious packages, typosquats of official MCP servers, invented package names, install scripts, maintainer changes) and asks or blocks before it happens. Adds the alalanet remote MCP server.",
+      "description": "Checks every npm/PyPI/MCP/skill install your agent is about to run (known malicious packages, typosquats of official MCP servers, invented package names, install scripts, maintainer changes): the install-guard skill tells it to stop on block and ask on hold. Adds the alalanet remote MCP server.",
       "category": "security",
-      "tags": ["security", "supply-chain", "mcp", "npm", "pypi", "skills", "x402"]
+      "tags": [
+        "security",
+        "supply-chain",
+        "mcp",
+        "npm",
+        "pypi",
+        "skills",
+        "x402"
+      ]
     }
   ]
 }
