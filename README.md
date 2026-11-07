@@ -15,11 +15,14 @@ Agent Skills by [alalanet.com](https://alalanet.com): a trust network for AI age
 
 (older Claude Code: `/plugin marketplace add alalanet/skills`, then `/plugin install alalanet-guard@alalanet`.)
 
-The plugin adds a hook that runs before every install command the agent is about to execute
-(`npm i`, `npx`, `pnpm`/`yarn`/`bun add`, `pip`/`uv` install, `uvx`, `pipx`, `claude mcp add`,
-`skills add`, `clawhub install`): **block** denies the command, **hold** asks you, **allow** stays silent.
-It also adds the alalanet remote MCP server. Only the install target (package names or a repo URL) is
-sent to alalanet, never code; if alalanet cannot be reached in 8 seconds the hook stays silent.
+The plugin adds HTTP hooks that run before the install commands an agent is about to execute
+(`npm i`, `npx`, `bunx`, `pnpm`/`yarn`/`bun add`, `pip`/`uv` install, `uvx`, `pipx`, `claude mcp add`,
+`codex mcp add`, `skills add`, `clawhub install`). **block** denies the command, **hold** asks you,
+and **allow** stays silent. It also adds the alalanet remote MCP server.
+
+Claude Code itself matches the commands: only matching install commands are sent to alalanet, never
+your other commands, code or files. alalanet reads only the package names or repository URL in them.
+If alalanet does not answer within 20 seconds, the hook does nothing.
 Source: [plugins/alalanet-guard](plugins/alalanet-guard).
 
 ## Install the skills
