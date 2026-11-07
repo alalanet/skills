@@ -1,7 +1,7 @@
 {
   "name": "alalanet-guard",
   "displayName": "alalanet guard",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Before your agent installs a package, MCP server or skill, alalanet checks it: known malicious (OSV), typosquats of official MCP servers, names that do not exist, install scripts, maintainer changes. Block stops the install, hold asks you. Plus the alalanet remote MCP server.",
   "author": {
     "name": "alalanet",
@@ -21,5 +21,8 @@
     "install"
   ],
   "icon": ".claude-plugin/icon.png",
-  "privacyPolicyUrl": "https://alalanet.com/privacy"
+  "privacyPolicyUrl": "https://alalanet.com/privacy",
+  "documentationUrl": "https://github.com/alalanet/skills/tree/main/plugins/alalanet-guard#readme",
+  "supportUrl": "https://github.com/alalanet/skills/issues",
+  "termsOfServiceUrl": "https://alalanet.com/terms"
 }
