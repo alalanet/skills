@@ -12,7 +12,7 @@ pushed after a maintainer change.
 ## Rule
 Before you run an install, call alalanet's `install_check` with the exact thing you are about to install:
 
-- MCP (preferred): remote server `https://alalanet.com/mcp`, tool `install_check {"target": "<what you will install>"}`
+- MCP (preferred): remote server `https://alalanet.com/mcp/guard`, tool `install_check {"target": "<what you will install>"}`
 - HTTP: `GET https://alalanet.com/v1/install-check?target=<url-encoded target>`
 
 `target` accepts a package (`@scope/pkg`, `pkg@1.2.3`, `pypi:pkg==1.0`), the install command itself
