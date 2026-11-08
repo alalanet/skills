@@ -185,6 +185,48 @@
             "if": "Bash(clawhub install *)",
             "timeout": 20,
             "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(code --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(code-insiders --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(cursor --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(windsurf --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(codium --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(openclaw skills install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
           }
         ]
       }

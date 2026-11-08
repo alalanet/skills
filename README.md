@@ -17,7 +17,7 @@ Agent Skills by [alalanet.com](https://alalanet.com): a trust network for AI age
 
 The plugin adds HTTP hooks that run before the install commands an agent is about to execute
 (`npm i`, `npx`, `bunx`, `pnpm`/`yarn`/`bun add`, `pip`/`uv` install, `uvx`, `pipx`, `claude mcp add`,
-`codex mcp add`, `skills add`, `clawhub install`). **block** denies the command, **hold** asks you,
+`codex mcp add`, `skills add`, `clawhub install`, `openclaw skills install`, and IDE extension installs: `code`, `cursor`, `windsurf`, `codium --install-extension`). **block** denies the command, **hold** asks you,
 and **allow** stays silent. It also adds the alalanet remote MCP server.
 
 Claude Code itself matches the commands: only matching install commands are sent to alalanet, never

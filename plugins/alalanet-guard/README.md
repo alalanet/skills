@@ -13,7 +13,8 @@ This plugin checks every install before it runs, with [alalanet](https://alalane
 | allow | stays silent | no known problem (the code itself is not read: pin versions) |
 
 Covered commands: `npm i`, `npx`, `pnpm`/`yarn`/`bun add`, `bunx`, `pip`/`uv` install, `uvx`, `pipx`,
-`claude mcp add … -- …`, `codex mcp add`, `skills add`, `clawhub install`.
+`claude mcp add … -- …`, `codex mcp add`, `skills add`, `clawhub install`, `openclaw skills install`, and IDE
+extension installs (`code`, `cursor`, `windsurf`, `codium --install-extension`).
 
 The plugin also adds the alalanet remote MCP server (`https://alalanet.com/mcp`): `install_check`,
 `check_service` and `preflight_payment` before connecting to or paying an MCP server or x402 endpoint,
