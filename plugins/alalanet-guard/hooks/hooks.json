@@ -2,7 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell",
         "hooks": [
           {
             "type": "http",
@@ -225,6 +225,230 @@
             "type": "http",
             "url": "https://alalanet.com/v1/hooks/claude-code",
             "if": "Bash(openclaw skills install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(npm install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(npm i *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(npm add *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(npm exec *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(npx *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(pnpm add *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(pnpm install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(pnpm dlx *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(pnpx *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(yarn add *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(yarn dlx *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(bun add *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(bun install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(bunx *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(pip install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(pip3 install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(uv add *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(uv pip install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(uv tool install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(uvx *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(pipx install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(pipx run *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(claude mcp add *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(codex mcp add *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(skills add *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(clawhub install *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(code --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(code-insiders --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(cursor --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(windsurf --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(codium --install-extension *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the install"
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(openclaw skills install *)",
             "timeout": 20,
             "statusMessage": "alalanet: checking the install"
           }

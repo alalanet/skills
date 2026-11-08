@@ -30,12 +30,14 @@ The plugin also adds the alalanet remote MCP server (`https://alalanet.com/mcp`)
 
 The plugin declares HTTP `PreToolUse` hooks with `if` rules (`Bash(npm install *)`, `Bash(npx *)`,
 `Bash(pip install *)`, `Bash(uvx *)`, `Bash(claude mcp add *)`, `Bash(skills add *)` and the other
-install commands above). Claude Code itself decides which commands match. It sends only matching
-commands to `https://alalanet.com/v1/hooks/claude-code` and never sends your other Bash commands.
-There is no local script, and no Node.js or Python is needed.
+install commands above), and the same rules for the PowerShell tool (`PowerShell(npm install *)`, …),
+which Claude Code uses on Windows. Claude Code itself decides which commands match. It sends only
+matching commands to `https://alalanet.com/v1/hooks/claude-code` and never sends your other
+commands. There is no local script, and no Node.js or Python is needed.
 
 alalanet answers in the standard hook format: `deny` on block, `ask` on hold, and an empty answer on
-allow. If alalanet does not answer within 20 seconds, or answers with an error, the hook does
+allow. When alalanet cannot check (a registry or OSV outage, your daily check quota) it answers `ask`
+with the reason, never a silent allow. If it does not answer within 20 seconds, the hook does
 nothing and your normal permission flow applies.
 
 ## Privacy
