@@ -1,50 +1,27 @@
-# alalanet skills
+# alalanet skills: directory build
 
-Agent Skills by [alalanet.com](https://alalanet.com): a trust network for AI agents.
+This branch is the build of the **alalanet guard** plugin for Anthropic's plugin directory. It has no
+hooks and connects to `https://alalanet.com/mcp/guard`, alalanet's MCP server for install and
+MCP-server checks. The full build, with hooks that check every install command automatically and
+more skills, is on the [`main` branch](https://github.com/alalanet/skills/tree/main).
 
-| Skill | What it does |
+| Part | What it does |
 |---|---|
-| [`install-guard`](skills/install-guard/SKILL.md) | Before installing any npm/PyPI package, GitHub repo, skill or MCP server, check it with alalanet `install_check`: blocks known malicious packages, holds typosquats of official MCP servers, names that do not exist, install scripts and maintainer changes. Free, no sign-up. |
-| [`alalanet-check-before-you-pay`](skills/alalanet-check-before-you-pay/SKILL.md) | Before paying an x402 endpoint or connecting to a remote MCP server, check that it is alive, that its price and payment address match its listing, and find working alternatives. Free, no sign-up. |
+| [`install-guard`](skills/install-guard/SKILL.md) skill | Before installing any npm/PyPI package, GitHub repo, skill or MCP server, Claude checks it with alalanet `install_check`: it blocks known malicious packages and holds typosquats of official MCP servers, names that do not exist, install scripts and maintainer changes. |
+| alalanet guard MCP server | `install_check`, `check_service` for remote MCP servers, `verify_tools` (are these the tools the server serves everyone?), `check_artifact` and `get_attestation`. |
 
-## Claude Code plugin: check every install automatically
+Free, no sign-up. Only the install target or the server URL is sent to alalanet, never your code or
+files. Privacy policy: <https://alalanet.com/privacy>. Source of the plugin: [plugins/alalanet-guard](plugins/alalanet-guard).
 
-```
-/plugin install alalanet-guard --marketplace alalanet/skills
-```
-
-(older Claude Code: `/plugin marketplace add alalanet/skills`, then `/plugin install alalanet-guard@alalanet`.)
-
-The plugin adds HTTP hooks that run before the install commands an agent is about to execute
-(`npm i`, `npx`, `bunx`, `pnpm`/`yarn`/`bun add`, `pip`/`uv` install, `uvx`, `pipx`, `claude mcp add`,
-`codex mcp add`, `skills add`, `clawhub install`). **block** denies the command, **hold** asks you,
-and **allow** stays silent. It also adds the alalanet remote MCP server.
-
-Claude Code itself matches the commands: only matching install commands are sent to alalanet, never
-your other commands, code or files. alalanet reads only the package names or repository URL in them.
-If alalanet does not answer within 20 seconds, the hook does nothing.
-Source: [plugins/alalanet-guard](plugins/alalanet-guard).
-
-## Install the skills
-
-```sh
-npx skills add alalanet/skills
-```
-
-Or copy `skills/alalanet-check-before-you-pay/` into your agent's skills folder. The skill is also
-served at <https://alalanet.com/.well-known/agent-skills/index.json> (Agent Skills discovery).
-
-## Verify before you install
+## Verify the skill
 
 Every version of the skill is a release signed by the alalanet server key and appended to a public
-transparency log. Check the file you got:
+transparency log:
 
 ```sh
-sha256sum skills/alalanet-check-before-you-pay/SKILL.md
+sha256sum skills/install-guard/SKILL.md
 curl -s https://alalanet.com/v1/artifacts/<sha256>    # advice: signed_by_alalanet
 ```
-
-Anything else (`unknown_hash`, a different publisher, `caution_conflicting`) means the file is not ours. The repository always holds the latest signed version; the live copy is <https://alalanet.com/skill.md>.
 
 ## License
 

@@ -1,5 +1,5 @@
 {
   "mcpServers": {
-    "alalanet": { "type": "http", "url": "https://alalanet.com/mcp" }
+    "alalanet": { "type": "http", "url": "https://alalanet.com/mcp/guard" }
   }
 }
