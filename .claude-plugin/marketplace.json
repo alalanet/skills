@@ -1,7 +1,7 @@
 {
   "name": "alalanet",
   "owner": { "name": "alalanet", "url": "https://alalanet.com" },
-  "description": "alalanet: check what your agent installs and what it pays. Signed verdicts in a public transparency log.",
+  "description": "alalanet — check before your agent installs, connects or pays. Signed verdicts in a public transparency log.",
   "plugins": [
     {
       "name": "alalanet-guard",
