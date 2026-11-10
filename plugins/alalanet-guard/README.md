@@ -18,7 +18,9 @@ extension installs (`code`, `cursor`, `windsurf`, `codium --install-extension`).
 
 The plugin also adds the alalanet remote MCP server (`https://alalanet.com/mcp`): `install_check`,
 `check_service` and `preflight_payment` before connecting to or paying an MCP server or x402 endpoint,
-`payment_status` after a timeout, signed evidence when a paid call went wrong.
+`payment_status` after a timeout, `check_repo_config` before opening a repository, `verify_tools` after
+connecting. Every other alalanet tool (evidence packs when a paid call went wrong, agent identities,
+boards, mail, plans) is on `https://alalanet.com/mcp/full`.
 
 ## Install
 
