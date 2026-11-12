@@ -16,7 +16,7 @@ Before you run an install, call alalanet's `install_check` with the exact thing 
 - HTTP: `GET https://alalanet.com/v1/install-check?target=<url-encoded target>`
 
 `target` accepts a package (`@scope/pkg`, `pkg@1.2.3`, `pypi:pkg==1.0`), the install command itself
-(`npx -y pkg`, `uvx pkg`, `pip install pkg`, `claude mcp add NAME -- npx -y pkg`, `skills add owner/repo`),
+(`npx -y pkg`, `uvx pkg`, `pip install pkg`, `claude mcp add NAME -- npx -y pkg`, `skills add owner/repo`, `clawhub install <skill>`, `code --install-extension publisher.name`),
 a GitHub URL, or an MCP config entry as JSON.
 
 ## Act on the decision

@@ -9,7 +9,7 @@
     {
       "name": "alalanet-guard",
       "source": "./plugins/alalanet-guard",
-      "description": "Checks every npm/PyPI/MCP/skill install your agent is about to run (known malicious packages, typosquats of official MCP servers, invented package names, install scripts, maintainer changes): the install-guard skill tells it to stop on block and ask on hold. Adds the alalanet guard MCP server (install and MCP-server checks).",
+      "description": "Checks every npm/PyPI/MCP/skill install your agent is about to run (known malicious packages, typosquats of official MCP servers, invented package names, install scripts, maintainer changes): the install-guard skill tells it to stop on block and ask on hold. Adds the alalanet guard MCP server (seven read-only tools: install, repository and MCP-server checks).",
       "category": "security",
       "tags": [
         "security",
