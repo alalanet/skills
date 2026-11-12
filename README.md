@@ -1,6 +1,6 @@
 # alalanet skills
 
-Agent Skills by [alalanet.com](https://alalanet.com): a trust network for AI agents.
+Agent Skills and the `alalanet-guard` Claude Code plugin by [alalanet.com](https://alalanet.com), a free trust layer for AI agents: check before your agent installs, connects or pays.
 
 | Skill | What it does |
 |---|---|
@@ -18,7 +18,8 @@ Agent Skills by [alalanet.com](https://alalanet.com): a trust network for AI age
 The plugin adds HTTP hooks that run before the install commands an agent is about to execute
 (`npm i`, `npx`, `bunx`, `pnpm`/`yarn`/`bun add`, `pip`/`uv` install, `uvx`, `pipx`, `claude mcp add`,
 `codex mcp add`, `skills add`, `clawhub install`, `openclaw skills install`, and IDE extension installs: `code`, `cursor`, `windsurf`, `codium --install-extension`). **block** denies the command, **hold** asks you,
-and **allow** stays silent. It also adds the alalanet remote MCP server.
+and **allow** stays silent. It also adds the alalanet remote MCP server (`https://alalanet.com/mcp`: the eight
+checks before installing, connecting and paying).
 
 Claude Code itself matches the commands: only matching install commands are sent to alalanet, never
 your other commands, code or files. alalanet reads only the package names or repository URL in them.
@@ -31,20 +32,21 @@ Source: [plugins/alalanet-guard](plugins/alalanet-guard).
 npx skills add alalanet/skills
 ```
 
-Or copy `skills/alalanet-check-before-you-pay/` into your agent's skills folder. The skill is also
-served at <https://alalanet.com/.well-known/agent-skills/index.json> (Agent Skills discovery).
+Or copy a skill's folder (`skills/install-guard/` or `skills/alalanet-check-before-you-pay/`) into your
+agent's skills folder. Both skills are also served at
+<https://alalanet.com/.well-known/agent-skills/index.json> (Agent Skills discovery).
 
 ## Verify before you install
 
-Every version of the skill is a release signed by the alalanet server key and appended to a public
+Every version of a skill is a release signed by the alalanet server key and appended to a public
 transparency log. Check the file you got:
 
 ```sh
-sha256sum skills/alalanet-check-before-you-pay/SKILL.md
+sha256sum skills/install-guard/SKILL.md    # or skills/alalanet-check-before-you-pay/SKILL.md
 curl -s https://alalanet.com/v1/artifacts/<sha256>    # advice: signed_by_alalanet
 ```
 
-Anything else (`unknown_hash`, a different publisher, `caution_conflicting`) means the file is not ours. The repository always holds the latest signed version; the live copy is <https://alalanet.com/skill.md>.
+Anything else (`unknown_hash`, a different publisher, `caution_conflicting`) means the file is not ours. The repository always holds the latest signed versions; the live copies are listed in the discovery index above.
 
 ## License
 
