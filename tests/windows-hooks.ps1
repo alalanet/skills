@@ -169,8 +169,27 @@ $letter = @('R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z') | Where-Object { -not (
 if ($LASTEXITCODE -ne 0) { throw 'subst failed' }
 $driveRoot = "$($letter):\"
 
-# $form: a name, a script block that starts one run.
+# Positive controls: a plant run on purpose must leave its mark, or the "nothing planted ran" checks prove nothing.
 $comspec = $env:ComSpec
+$winPs = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+$controls = [ordered]@{
+  'cmd runs .\alalanet-agent.exe'            = { Invoke-Hook $comspec '/C ".\alalanet-agent.exe hook codex"' $null $basePath 0 $repo }
+  'cmd runs .\alalanet-agent.cmd'            = { Invoke-Hook $comspec '/C ".\alalanet-agent.cmd hook codex"' $null $basePath 0 $repo }
+  'cmd runs .\alalanet-agent.bat'            = { Invoke-Hook $comspec '/C ".\alalanet-agent.bat hook codex"' $null $basePath 0 $repo }
+  'cmd runs .\where.exe'                     = { Invoke-Hook $comspec '/C ".\where.exe alalanet-agent"' $null $basePath 0 $repo }
+  'cmd runs .venv\Scripts\alalanet-agent.exe' = { Invoke-Hook $comspec '/C ".venv\Scripts\alalanet-agent.exe hook codex"' $null $basePath 0 $repo }
+  'powershell.exe runs .\alalanet-agent.exe' = { Invoke-Hook $winPs $null @('-NoProfile', '-NonInteractive', '-Command', '& .\alalanet-agent.exe hook copilot') $basePath 0 $repo }
+}
+foreach ($k in $controls.Keys) {
+  $r = & $controls[$k]
+  Check "control: $k" 'a plant run on purpose leaves its mark' ($r.Planted.Count -gt 0) ($r.Planted -join ', ')
+}
+# For the record (not a check): does cmd, without NoDefaultCurrentDirectoryInExePath, run a bare name from the
+# workspace before PATH? This is the behaviour the forms are built to avoid.
+$probe = Invoke-Hook $comspec '/C "alalanet-agent hook codex"' $null "$bin;$basePath" 0 $repo
+Write-Output ("probe: bare alalanet-agent under cmd, stand-in on PATH -> planted marks: [{0}], stand-in ran: {1}" -f ($probe.Planted -join ', '), ($null -ne $probe.Marks['args.txt']))
+
+# $form: a name, a script block that starts one run.
 $forms = [ordered]@{
   'codex cmd' = @{ Kind = 'systemMessage'; Runtime = 'codex'; Run = { param($pv, $code, $cwd) Invoke-Hook $comspec ('/C "' + $codex + '"') $null $pv $code $cwd } }
   'copilot powershell.exe 5.1' = @{ Kind = 'message'; Runtime = 'copilot'; Run = { param($pv, $code, $cwd) Invoke-Hook (Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe') $null @('-NoProfile', '-NonInteractive', '-Command', $copilot) $pv $code $cwd } }

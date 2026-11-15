@@ -102,7 +102,10 @@ there. So `.`, an empty or a relative `PATH` entry, an activated in-repository `
 direnv put on `PATH`, and on Windows cmd's habit of looking in the current folder first, never supply it. If the
 workspace is `/` or a drive root, nothing on it qualifies. The guard cannot protect a `PATH` that holds other folders
 the agent can write: keep alalanet-agent in a folder only you write (`/usr/local/bin`, `~/.local/bin`), and do not
-start the agent with such folders ahead of it. On Windows, junctions and subst drives in a path are not resolved.
+start the agent with such folders ahead of it. On Windows, junctions, subst drives and 8.3 short names (`C:\PROGRA~1`)
+in a path are not resolved, so a `PATH` entry that reaches the workspace by another spelling is not recognised. A
+workspace on a UNC path (`\\wsl.localhost\...`, a network share) is not supported by Codex's hook: cmd.exe cannot start
+in a UNC folder, so it starts in `C:\Windows` and the rule is measured against that folder instead.
 
 **When alalanet-agent is not installed** (or the file is not executable, for example a download without
 `chmod +x`, or only inside the workspace). The hook does not fail and does not pretend to check: it prints one line,

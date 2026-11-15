@@ -138,6 +138,8 @@ test("Copilot hook file: preToolUse on shell tools only, both shells, a timeout 
   assert.ok(h.timeoutSec >= 25 && h.timeoutSec <= 30, "alalanet-agent waits up to 20 s for alalanet");
   assert.match(h.bash, /if \[ -n "\$a" \]; then exec "\$a" hook copilot; fi;/);
   assert.doesNotMatch(h.bash, /for d in \$PATH/, "no word splitting of PATH: zsh does not split");
+  // macOS: bash's and sh's built-in pwd -P keeps the spelling it was given; /bin/pwd -P gives the on-disk case.
+  assert.equal(h.bash.match(/\/bin\/pwd -P 2>\/dev\/null \|\| pwd -P/g)?.length, 2, "both sides from /bin/pwd -P");
   psMarkers(h.powershell, "copilot");
 });
 
@@ -148,7 +150,7 @@ function psMarkers(code, runtime) {
   assert.match(code, /\.StartsWith\(\$c, \$cmp\)/, "folders at or under the current folder are skipped");
   assert.match(code, /\[StringComparison\]::OrdinalIgnoreCase/);
   assert.match(code, /LinkType/, "symbolic links are followed");
-  assert.match(code, new RegExp(`& \\$p hook ${runtime}; exit \\$LASTEXITCODE`));
+  assert.match(code, new RegExp(`& \\$t hook ${runtime}; exit \\$LASTEXITCODE`), "the resolved path runs, not the PATH spelling");
   assert.doesNotMatch(code, /Get-Command|(^|[;{] )alalanet-agent /, "never resolved by a bare name");
 }
 
@@ -231,6 +233,11 @@ const notUsable = {
   "only in node_modules/.bin of the workspace": `${ws}/node_modules/.bin:${basePath}`,
   "only as a symlink from a user folder into the workspace": `${linkDir}:${basePath}`,
 };
+// On a case-insensitive file system (macOS's default APFS) the workspace spelled in other case is the same folder.
+const wsOtherCase = path.join(work, "REPO");
+if (existsSync(path.join(wsOtherCase, ".venv", "bin", "alalanet-agent"))) {
+  notUsable["only in the workspace's .venv/bin, spelled REPO for the workspace repo"] = `${wsOtherCase}/.venv/bin:${basePath}`;
+}
 const usable = {
   "on PATH": `${fakeDir}:${basePath}`,
   "on PATH after a non-executable one": `${nxDir}:${fakeDir}:${basePath}`,
