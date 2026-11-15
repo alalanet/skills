@@ -1,39 +1,28 @@
 #!/bin/sh
 # alalanet guard: Cursor's beforeShellExecution hook on macOS and Linux (Windows runs guard.cmd).
 #
-# Cursor sends the hook input on stdin. This script reads only its "command" field, and sends that command line, and
-# nothing else, to alalanet's install check when it installs or runs a package (the pattern below, the same one as
-# the matcher in hooks/hooks.json). It prints Cursor's answer on stdout:
+# Cursor sends the hook input on stdin. This script reads only its "command" field. It sends that command line, as
+# typed and nothing else, to alalanet's install check when a word in it names a program alalanet reads: npm, pnpm,
+# yarn, bun, npx, bunx, pnpx, pip, pip3, pipx, uv, uvx, deno, skills, clawhub, openclaw; claude, codex or gemini
+# followed by mcp; or the options --install-extension and --add-mcp. Words are read case-insensitively, with quotes
+# and backslashes ignored, and may be a path (C:\nodejs\npx.cmd). The pattern is scripts/pattern.txt, the same text
+# as the matcher in hooks/hooks.json. alalanet decides; this filter only keeps other commands on the machine.
+# It prints Cursor's answer on stdout:
 #   block   -> {"permission":"deny"} with alalanet's reason
 #   hold    -> {"permission":"deny"} with the reason and a note to confirm with the user (Cursor does not pause a
 #              shell command on "ask")
 #   nothing -> {"permission":"allow"}: Cursor's own approval rules still apply
-# When alalanet cannot be reached or does not answer within 20 seconds, the command goes ahead unchecked, with one
-# line on stderr. ALALANET_FAIL_CLOSED=1 holds it instead.
+# When alalanet cannot be reached, answers an error, or does not answer in full within 20 seconds, the command goes
+# ahead unchecked, with one line on stderr. ALALANET_FAIL_CLOSED=1 holds it instead.
 #
-# Needs only sh, awk, sed, tr, grep and curl. Source: https://github.com/alalanet/skills (MIT-0).
+# Needs only sh, sed, awk, tr, grep, wc and curl. Source: https://github.com/alalanet/skills (MIT-0).
 
 VERSION=1.0.0
 API=${ALALANET_API:-https://alalanet.com}
+API=${API%/}
+MAX_ANSWER=65536
+ENVELOPE=79 # bytes of {"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":""}}
 HOLD_NOTE=' — this agent runtime cannot pause for the user here: confirm with the user before installing; if they agree, they can run it themselves.'
-
-# The install commands (POSIX ERE). hooks/hooks.json has the same pattern in JavaScript syntax.
-S='[[:space:]]'
-B="(^|[[:space:];&|(\`'\"/])"
-E="([[:space:];&|)\`'\"]|\$)"
-W="($S+[^[:space:];&|]+)*"
-PATTERN="$B((npm|pnpm|yarn|bun)(\.cmd|\.exe)?$W$S+(install|i|add|dlx|exec|x)$E"
-PATTERN="$PATTERN|(npx|pnpx|bunx|uvx)(\.cmd|\.exe)?$S+[^[:space:];&|]"
-PATTERN="$PATTERN|(pip|pip3)(\.exe)?$W${S}+install$E"
-PATTERN="$PATTERN|pipx(\.exe)?$W$S+(install|run|inject|runpip)$E"
-PATTERN="$PATTERN|uv(\.exe)?$W$S+(add|install)$E"
-PATTERN="$PATTERN|uv(\.exe)?${S}+tool${S}+run$E"
-PATTERN="$PATTERN|uv(\.exe)?${S}+run$W${S}+--with([[:space:]=]|\$)"
-PATTERN="$PATTERN|(python[0-9.]*|py)(\.exe)?${S}+-m${S}+(pip|pip3|uv|pipx)$W$S+(install|add|run|inject|runpip)$E"
-PATTERN="$PATTERN|deno(\.exe)?$W$S+['\"]?(npm:|jsr:|https://)"
-PATTERN="$PATTERN|(claude|codex|gemini)(\.cmd|\.exe)?${S}+mcp${S}+add$E"
-PATTERN="$PATTERN|(skills|clawhub)(\.cmd|\.exe)?$S+(add|install|a|i)$E"
-PATTERN="$PATTERN|--install-extension([[:space:]=]|\$))"
 
 answer() { # permission [message]
 	if [ -n "$2" ]; then
@@ -44,12 +33,14 @@ answer() { # permission [message]
 	exit 0
 }
 
+hold() { # why
+	answer deny "alalanet install_check: NOT CHECKED — $1. Install only if the user confirms.$HOLD_NOTE"
+}
+
 # not_checked why: alalanet did not check the install. It goes ahead (stderr says so), or is held with
 # ALALANET_FAIL_CLOSED=1.
 not_checked() {
-	if [ "$ALALANET_FAIL_CLOSED" = 1 ]; then
-		answer deny "alalanet install_check: NOT CHECKED — $1. Install only if the user confirms.$HOLD_NOTE"
-	fi
+	[ "$ALALANET_FAIL_CLOSED" = 1 ] && hold "$1"
 	echo "alalanet guard: the install was not checked ($1); it goes ahead. ALALANET_FAIL_CLOSED=1 holds such installs." >&2
 	answer allow
 }
@@ -72,40 +63,48 @@ input=$(tr -d '\r\n')
 command=$(printf '%s' "$input" | string_field command)
 if [ -z "$command" ]; then
 	case $input in
-	*'"command"'*) answer deny "alalanet install_check: NOT CHECKED — the hook could not read the command. Install only if the user confirms.$HOLD_NOTE" ;;
+	*'"command"'*) hold "the hook could not read the command" ;;
 	*) answer allow ;; # not a shell command
 	esac
 fi
 command=${command#=}
 
-# Only install commands leave the machine. The pattern is matched on the command with its escapes read back.
-plain=$(printf '%s' "$command" | sed 's/\\[ntr]/ /g; s/\\"/"/g; s/\\\\/\\/g')
-if ! printf '%s\n' "$plain" | grep -Eq -- "$PATTERN"; then
-	answer allow
-fi
+# The filter reads the command's text: the JSON escapes read back in one pass (\\ first, through a byte JSON never
+# leaves raw), control characters as spaces. Every \s of the pattern is inside brackets, so [:space:] replaces it.
+here=$(dirname "$0")
+pattern=$(sed 's/\\s/[:space:]/g' "$here/pattern.txt" 2>/dev/null)
+[ -n "$pattern" ] || hold "the plugin's pattern file is missing"
+soh=$(printf '\001')
+plain=$(printf '%s\n' "$command" | sed -e 's/\\\\/'"$soh"'/g' -e 's/\\[nrtbf]/ /g' -e 's/\\u[0-9a-fA-F]\{4\}/ /g' \
+	-e 's/\\"/"/g' -e 's/\\\//\//g' -e 's/'"$soh"'/\\/g')
+printf '%s\n' "$plain" | grep -Eq -- "$pattern" || answer allow
 
-case $API in
-https://* | http://127.0.0.1:* | http://localhost:*) ;;
-*) answer deny "alalanet install_check: NOT CHECKED — ALALANET_API is not an https URL. Install only if the user confirms.$HOLD_NOTE" ;;
-esac
-if [ ${#command} -gt 1000000 ]; then # the server reads at most 1 MiB
-	answer deny "alalanet install_check: NOT CHECKED — the command is too large for alalanet to read. Install only if the user confirms.$HOLD_NOTE"
+if ! printf '%s\n' "$API" | grep -Eq '^(https://|http://(127\.0\.0\.1|localhost):[0-9]+(/|$))'; then
+	hold "ALALANET_API is not an https URL (plain http only to 127.0.0.1 or localhost)"
 fi
+bytes=$(printf '%s' "$command" | LC_ALL=C wc -c | tr -d ' ')
+[ "$bytes" -le $((1048576 - ENVELOPE)) ] || hold "the command is too large for alalanet to read" # the server reads 1 MiB
 command -v curl >/dev/null 2>&1 || not_checked "curl is not installed"
 
-headers=$(mktemp 2>/dev/null) || not_checked "no temporary file for the answer"
-trap 'rm -f "$headers"' EXIT
-body=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s"}}' "$command" |
-	curl -sS --proto '=https,http' --max-time 20 --max-filesize 65536 -X POST \
+dir=$(mktemp -d 2>/dev/null) || not_checked "no temporary folder for the answer"
+trap 'rm -rf "$dir"' EXIT
+: > "$dir/body" # curl writes no file for an empty answer
+rc=0
+code=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s"}}' "$command" |
+	curl -q -g -sS --proto '=https,http' --max-time 20 --max-filesize "$MAX_ANSWER" -X POST \
 		-H 'Content-Type: application/json' -A "alalanet-guard-cursor/$VERSION (hook cursor)" \
-		-D "$headers" --data-binary @- -w '\n%{http_code}' "$API/v1/hooks/claude-code" 2>/dev/null)
-status=$(printf '%s' "$body" | tail -n 1)
-body=$(printf '%s' "$body" | sed '$d' | tr -d '\r\n')
-case $status in
-200) ;;
-000 | '') not_checked "alalanet could not be reached" ;;
-*) not_checked "alalanet answered HTTP $status" ;;
+		-D "$dir/headers" -o "$dir/body" --data-binary @- -w '%{http_code}' "$API/v1/hooks/claude-code" 2>/dev/null) || rc=$?
+case $rc in
+0) ;;
+28) not_checked "alalanet did not answer in full within 20 seconds" ;;
+63) not_checked "alalanet's answer is larger than $MAX_ANSWER bytes" ;;
+6 | 7) not_checked "alalanet could not be reached" ;;
+*) not_checked "the request to alalanet failed (curl exit $rc)" ;;
 esac
+[ "$code" = 200 ] || not_checked "alalanet answered HTTP ${code:-none}"
+size=$(LC_ALL=C wc -c < "$dir/body" | tr -d ' ')
+[ "$size" -le "$MAX_ANSWER" ] || not_checked "alalanet's answer is larger than $MAX_ANSWER bytes"
+body=$(tr -d '\r\n' < "$dir/body")
 
 decision=$(printf '%s' "$body" | string_field permissionDecision)
 decision=${decision#=}
@@ -114,7 +113,7 @@ reason=${reason#=}
 case $decision in
 deny) answer deny "${reason:-alalanet install_check: BLOCK. Do not install; tell the user.}" ;;
 ask)
-	if grep -iq '^alalanet-not-checked:[[:space:]]*daily-limit' "$headers"; then
+	if grep -iq '^alalanet-not-checked:[[:space:]]*daily-limit' "$dir/headers"; then
 		not_checked "alalanet's daily limit for this address is reached"
 	fi
 	answer deny "${reason:-alalanet install_check: HOLD. Install only if the user confirms.}$HOLD_NOTE"

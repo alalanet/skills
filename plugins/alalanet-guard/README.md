@@ -48,7 +48,10 @@ nothing and your normal permission flow applies.
   hook fields (session id, working directory, transcript path).
 - alalanet reads only `tool_name` and the command. It extracts the package names or repository URLs
   and checks them. It does not store or log the command line or the other fields.
-- No code, files or credentials are sent, and no account or key is needed.
+- The matching command line is sent whole, as typed. If it carries a token (`-e GITHUB_TOKEN=…`, a URL with
+  a password such as `--index-url https://user:token@host/simple`) or file text (a heredoc that writes a file),
+  that goes too. alalanet does not store or log it. Nothing else of yours is sent: no other files and no
+  environment. No account or key is needed.
 - Verdicts (target, decision, reasons) are signed into alalanet's public transparency log, without
   anything about who asked.
 - Full policy: https://alalanet.com/privacy

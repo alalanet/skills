@@ -1,48 +1,41 @@
 # alalanet guard: Cursor's beforeShellExecution hook on Windows (guard.cmd runs it; macOS and Linux run ./guard).
 #
-# Cursor sends the hook input on stdin. This script reads only its "command" field, and sends that command line, and
-# nothing else, to alalanet's install check when it installs or runs a package (the pattern below, the same one as
-# the matcher in hooks/hooks.json). It prints Cursor's answer on stdout:
+# Cursor sends the hook input on stdin. This script reads only its "command" field. It sends that command line, as
+# typed and nothing else, to alalanet's install check when a word in it names a program alalanet reads (the list is
+# in scripts/guard; the pattern is scripts/pattern.txt, the same text as the matcher in hooks/hooks.json).
+# alalanet decides; this filter only keeps other commands on the machine. It prints Cursor's answer on stdout:
 #   block   -> {"permission":"deny"} with alalanet's reason
 #   hold    -> {"permission":"deny"} with the reason and a note to confirm with the user (Cursor does not pause a
 #              shell command on "ask")
 #   nothing -> {"permission":"allow"}: Cursor's own approval rules still apply
-# When alalanet cannot be reached or does not answer within 20 seconds, the command goes ahead unchecked, with one
-# line on stderr. ALALANET_FAIL_CLOSED=1 holds it instead.
+# When alalanet cannot be reached, answers an error, or does not answer in full within 18 seconds (one timer over
+# the whole request: name lookup, connection, headers and body), the command goes ahead unchecked, with one line
+# on stderr. ALALANET_FAIL_CLOSED=1 holds it instead.
 #
 # Windows PowerShell 5.1 or PowerShell 7; nothing to install. Source: https://github.com/alalanet/skills (MIT-0).
 
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 $Version = '1.0.0'
+$DeadlineMs = 18000
+$MaxAnswer = 65536
+$Envelope = 79 # bytes of {"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":""}}
 $Api = 'https://alalanet.com'
-if ($env:ALALANET_API) { $Api = $env:ALALANET_API.TrimEnd('/') }
+if ($env:ALALANET_API) { $Api = $env:ALALANET_API }
+$Api = $Api.TrimEnd('/')
 $Dash = [string][char]0x2014
 $HoldNote = " $Dash this agent runtime cannot pause for the user here: confirm with the user before installing; if they agree, they can run it themselves."
 
-# The install commands, in the same syntax as the matcher in hooks/hooks.json (.NET reads JavaScript's here).
-$B = '(^|[\s;&|(`''"/])'
-$E = '([\s;&|)`''"]|$)'
-$W = '(\s+[^\s;&|]+)*'
-$Pattern = $B + '((npm|pnpm|yarn|bun)(\.cmd|\.exe)?' + $W + '\s+(install|i|add|dlx|exec|x)' + $E +
-	'|(npx|pnpx|bunx|uvx)(\.cmd|\.exe)?\s+[^\s;&|]' +
-	'|(pip|pip3)(\.exe)?' + $W + '\s+install' + $E +
-	'|pipx(\.exe)?' + $W + '\s+(install|run|inject|runpip)' + $E +
-	'|uv(\.exe)?' + $W + '\s+(add|install)' + $E +
-	'|uv(\.exe)?\s+tool\s+run' + $E +
-	'|uv(\.exe)?\s+run' + $W + '\s+--with([\s=]|$)' +
-	'|(python[0-9.]*|py)(\.exe)?\s+-m\s+(pip|pip3|uv|pipx)' + $W + '\s+(install|add|run|inject|runpip)' + $E +
-	'|deno(\.exe)?' + $W + '\s+[''"]?(npm:|jsr:|https://)' +
-	'|(claude|codex|gemini)(\.cmd|\.exe)?\s+mcp\s+add' + $E +
-	'|(skills|clawhub)(\.cmd|\.exe)?\s+(add|install|a|i)' + $E +
-	'|--install-extension([\s=]|$))'
+# AsciiJson: JSON text with every non-ASCII character as a \u escape, so no code page can change it.
+function AsciiJson([string]$Json) {
+	return [regex]::Replace($Json, '[^\x00-\x7F]', { param($m) '\u{0:x4}' -f [int][char]$m.Value })
+}
 
-# Answer writes Cursor's answer as ASCII JSON (non-ASCII as \u escapes, whatever the console code page) and ends.
+# Answer writes Cursor's answer and ends.
 function Answer([string]$Permission, [string]$Message) {
 	$o = [ordered]@{ permission = $Permission }
 	if ($Message) { $o.user_message = $Message; $o.agent_message = $Message }
-	$j = ConvertTo-Json -InputObject $o -Compress
-	$j = [regex]::Replace($j, '[^\x00-\x7F]', { param($m) '\u{0:x4}' -f [int][char]$m.Value })
-	[Console]::Out.Write($j + "`n")
+	[Console]::Out.Write((AsciiJson (ConvertTo-Json -InputObject $o -Compress)) + "`n")
 	exit 0
 }
 
@@ -71,30 +64,56 @@ elseif ($hook -and $hook.PSObject.Properties['tool_input'] -and $hook.tool_input
 elseif ($text -notmatch '"command"') { Answer 'allow' } # not a shell command
 if ($command -isnot [string]) { Hold 'the hook could not read the command' }
 
-# Only install commands leave the machine.
-if (-not [regex]::IsMatch($command, $Pattern)) { Answer 'allow' }
+# Only lines that name a program alalanet reads leave the machine.
+try { $Pattern = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'pattern.txt')).Trim() } catch { $Pattern = '' }
+if (-not $Pattern) { Hold "the plugin's pattern file is missing" }
+# Compiled: about ten times faster than the interpreter on long lines; the pattern has no nested repetition.
+try {
+	$rx = New-Object System.Text.RegularExpressions.Regex($Pattern, [System.Text.RegularExpressions.RegexOptions]::Compiled, [TimeSpan]::FromSeconds(5))
+	$named = $rx.IsMatch($command)
+} catch { NotChecked 'the command could not be read in time' }
+if (-not $named) { Answer 'allow' }
 
-if (-not ($Api -match '^https://' -or $Api -match '^http://(127\.0\.0\.1|localhost):')) { Hold 'ALALANET_API is not an https URL' }
-$body = ConvertTo-Json -Compress -Depth 3 -InputObject ([ordered]@{
-	hook_event_name = 'PreToolUse'; tool_name = 'Bash'; tool_input = [ordered]@{ command = $command } })
-$bytes = [Text.Encoding]::UTF8.GetBytes($body)
-if ($bytes.Length -gt 1048576) { Hold 'the command is too large for alalanet to read' }
+if ($Api -notmatch '^(https://|http://(127\.0\.0\.1|localhost):[0-9]+(/|$))') {
+	Hold 'ALALANET_API is not an https URL (plain http only to 127.0.0.1 or localhost)'
+}
+if ([Text.Encoding]::UTF8.GetByteCount($command) -gt (1048576 - $Envelope)) { Hold 'the command is too large for alalanet to read' }
+$body = AsciiJson (ConvertTo-Json -Compress -Depth 3 -InputObject ([ordered]@{
+	hook_event_name = 'PreToolUse'; tool_name = 'Bash'; tool_input = [ordered]@{ command = $command } }))
 
 try {
+	Add-Type -AssemblyName System.Net.Http
 	[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-	$r = Invoke-WebRequest -Uri "$Api/v1/hooks/claude-code" -Method Post -Body $bytes -ContentType 'application/json' `
-		-UserAgent "alalanet-guard-cursor/$Version (hook cursor)" -TimeoutSec 20 -UseBasicParsing -MaximumRedirection 0
-} catch {
-	$code = $null
-	if ($_.Exception.Response) { $code = [int]$_.Exception.Response.StatusCode }
-	if ($code) { NotChecked "alalanet answered HTTP $code" }
+	$handler = New-Object System.Net.Http.HttpClientHandler
+	$handler.AllowAutoRedirect = $false
+	$client = New-Object System.Net.Http.HttpClient($handler)
+	$client.Timeout = [TimeSpan]::FromMilliseconds($DeadlineMs)
+	$client.MaxResponseContentBufferSize = $MaxAnswer
+	$null = $client.DefaultRequestHeaders.TryAddWithoutValidation('User-Agent', "alalanet-guard-cursor/$Version (hook cursor)")
+	$content = New-Object System.Net.Http.ByteArrayContent(, [Text.Encoding]::ASCII.GetBytes($body))
+	$content.Headers.ContentType = New-Object System.Net.Http.Headers.MediaTypeHeaderValue('application/json')
+	$task = $client.PostAsync("$Api/v1/hooks/claude-code", $content)
+} catch { NotChecked 'the request to alalanet could not be made' }
+# One timer over the whole request, whatever the runtime does with its own timeouts.
+$done = $false
+try { $done = $task.Wait($DeadlineMs) } catch { $done = $true }
+if (-not $done) { NotChecked 'alalanet did not answer in full within 18 seconds' }
+if ($task.IsCanceled) { NotChecked 'alalanet did not answer in full within 18 seconds' }
+if ($task.IsFaulted) {
+	$e = $task.Exception.GetBaseException()
+	if ($e.Message -match 'buffer|size') { NotChecked "alalanet's answer is larger than $MaxAnswer bytes" }
 	NotChecked 'alalanet could not be reached'
 }
-if ($r.StatusCode -ne 200) { NotChecked ("alalanet answered HTTP " + $r.StatusCode) }
+$r = $task.Result
+if ([int]$r.StatusCode -ne 200) { NotChecked ("alalanet answered HTTP " + [int]$r.StatusCode) }
+$bytes = $r.Content.ReadAsByteArrayAsync().Result
+if ($bytes.Length -gt $MaxAnswer) { NotChecked "alalanet's answer is larger than $MaxAnswer bytes" }
+$answer = [Text.Encoding]::UTF8.GetString($bytes)
+$values = $null
+$dailyLimit = $r.Headers.TryGetValues('Alalanet-Not-Checked', [ref]$values) -and (@($values) -contains 'daily-limit')
 
-$content = [string]$r.Content
-if ($content.Trim() -eq '') { Answer 'allow' }
-try { $a = ConvertFrom-Json -InputObject $content } catch { NotChecked "alalanet's answer could not be read" }
+if ($answer.Trim() -eq '') { Answer 'allow' }
+try { $a = ConvertFrom-Json -InputObject $answer } catch { NotChecked "alalanet's answer could not be read" }
 $out = $null
 if ($a -and $a.PSObject.Properties['hookSpecificOutput']) { $out = $a.hookSpecificOutput }
 if (-not $out -or -not $out.PSObject.Properties['permissionDecision']) { NotChecked "alalanet's answer could not be read" }
@@ -105,7 +124,7 @@ switch ([string]$out.permissionDecision) {
 		Answer 'deny' $reason
 	}
 	'ask' {
-		if ([string]$r.Headers['Alalanet-Not-Checked'] -eq 'daily-limit') { NotChecked "alalanet's daily limit for this address is reached" }
+		if ($dailyLimit) { NotChecked "alalanet's daily limit for this address is reached" }
 		if (-not $reason) { $reason = 'alalanet install_check: HOLD. Install only if the user confirms.' }
 		Answer 'deny' ($reason + $HoldNote)
 	}

@@ -29,8 +29,9 @@ Source: [plugins/alalanet-guard](plugins/alalanet-guard).
 ## Cursor plugin
 
 The same check in Cursor: a `beforeShellExecution` hook (a small `sh` script on macOS and Linux, PowerShell on
-Windows; nothing to install) that sends only the install command line to alalanet, denies on block and on hold
-with the reason, and lets the command go ahead unchecked if alalanet does not answer within 20 seconds
+Windows; nothing to install) that sends a command line to alalanet only when it names a package manager or
+installer (npm, npx, pip, uv, claude mcp, … the list is in the plugin's README), denies on block and on hold with
+the reason, and lets the command go ahead unchecked if alalanet does not answer within 20 seconds
 (`ALALANET_FAIL_CLOSED=1` holds it instead). It also connects Cursor to alalanet's read-only MCP server
 `https://alalanet.com/mcp/guard`. Source and details: [plugins/alalanet-guard-cursor](plugins/alalanet-guard-cursor);
 Cursor reads it through [.cursor-plugin/marketplace.json](.cursor-plugin/marketplace.json).
