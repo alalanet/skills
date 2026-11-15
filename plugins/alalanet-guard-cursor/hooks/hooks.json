@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "./scripts/guard",
+        "matcher": "(^|[\\s;&|(`'\"/])((npm|pnpm|yarn|bun)(\\.cmd|\\.exe)?(\\s+[^\\s;&|]+)*\\s+(install|i|add|dlx|exec|x)([\\s;&|)`'\"]|$)|(npx|pnpx|bunx|uvx)(\\.cmd|\\.exe)?\\s+[^\\s;&|]|(pip|pip3)(\\.exe)?(\\s+[^\\s;&|]+)*\\s+install([\\s;&|)`'\"]|$)|pipx(\\.exe)?(\\s+[^\\s;&|]+)*\\s+(install|run|inject|runpip)([\\s;&|)`'\"]|$)|uv(\\.exe)?(\\s+[^\\s;&|]+)*\\s+(add|install)([\\s;&|)`'\"]|$)|uv(\\.exe)?\\s+tool\\s+run([\\s;&|)`'\"]|$)|uv(\\.exe)?\\s+run(\\s+[^\\s;&|]+)*\\s+--with([\\s=]|$)|(python[0-9.]*|py)(\\.exe)?\\s+-m\\s+(pip|pip3|uv|pipx)(\\s+[^\\s;&|]+)*\\s+(install|add|run|inject|runpip)([\\s;&|)`'\"]|$)|deno(\\.exe)?(\\s+[^\\s;&|]+)*\\s+['\"]?(npm:|jsr:|https://)|(claude|codex|gemini)(\\.cmd|\\.exe)?\\s+mcp\\s+add([\\s;&|)`'\"]|$)|(skills|clawhub)(\\.cmd|\\.exe)?\\s+(add|install|a|i)([\\s;&|)`'\"]|$)|--install-extension([\\s=]|$))",
+        "timeout": 25,
+        "failClosed": false
+      }
+    ]
+  }
+}

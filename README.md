@@ -1,6 +1,6 @@
 # alalanet skills
 
-Agent Skills and the `alalanet-guard` Claude Code plugin by [alalanet.com](https://alalanet.com), a free trust layer for AI agents: check before your agent installs, connects or pays.
+Agent Skills and the `alalanet-guard` plugins for Claude Code and Cursor by [alalanet.com](https://alalanet.com), a free trust layer for AI agents: check before your agent installs, connects or pays.
 
 | Skill | What it does |
 |---|---|
@@ -25,6 +25,15 @@ Claude Code itself matches the commands: only matching install commands are sent
 your other commands, code or files. alalanet reads only the package names or repository URL in them.
 If alalanet does not answer within 20 seconds, the hook does nothing.
 Source: [plugins/alalanet-guard](plugins/alalanet-guard).
+
+## Cursor plugin
+
+The same check in Cursor: a `beforeShellExecution` hook (a small `sh` script on macOS and Linux, PowerShell on
+Windows; nothing to install) that sends only the install command line to alalanet, denies on block and on hold
+with the reason, and lets the command go ahead unchecked if alalanet does not answer within 20 seconds
+(`ALALANET_FAIL_CLOSED=1` holds it instead). It also connects Cursor to alalanet's read-only MCP server
+`https://alalanet.com/mcp/guard`. Source and details: [plugins/alalanet-guard-cursor](plugins/alalanet-guard-cursor);
+Cursor reads it through [.cursor-plugin/marketplace.json](.cursor-plugin/marketplace.json).
 
 ## Install the skills
 

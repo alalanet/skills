@@ -1,0 +1,17 @@
+{
+  "name": "alalanet",
+  "owner": {
+    "name": "alalanet",
+    "email": "info@alalanet.com"
+  },
+  "metadata": {
+    "description": "alalanet: check before your agent installs, connects or pays. Signed verdicts in a public transparency log."
+  },
+  "plugins": [
+    {
+      "name": "alalanet-guard",
+      "source": "./plugins/alalanet-guard-cursor",
+      "description": "Checks the install commands your agent is about to run (npm, npx, pip, uv, MCP servers, skills, IDE extensions) and stops known malicious packages, typosquats of official MCP servers and invented names before they run. Adds alalanet's read-only MCP checks."
+    }
+  ]
+}

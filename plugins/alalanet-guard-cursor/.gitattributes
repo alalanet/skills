@@ -1,0 +1,4 @@
+# The Windows wrapper keeps CRLF; the sh script keeps LF.
+*.cmd text eol=crlf
+scripts/guard text eol=lf
+*.ps1 text eol=lf
