@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'command -v alalanet-agent >/dev/null 2>&1 && exec alalanet-agent hook codex; echo \"{\\\"systemMessage\\\":\\\"alalanet guard: alalanet-agent is not installed, so this command was NOT checked. Install it from https://alalanet.com/dl and put it on PATH.\\\"}\"'",
-            "commandWindows": "where /q alalanet-agent || (echo {\"systemMessage\":\"alalanet guard: alalanet-agent is not installed, so this command was NOT checked. Install it from https://alalanet.com/dl and put it on PATH.\"}& exit 0) && alalanet-agent hook codex",
+            "command": "sh -c 'set -f; IFS=:; for d in $PATH; do case $d in /*) if [ -f \"$d/alalanet-agent\" ] && [ -x \"$d/alalanet-agent\" ]; then exec \"$d/alalanet-agent\" hook codex; fi;; esac; done; echo \"{\\\"systemMessage\\\":\\\"alalanet guard: no executable alalanet-agent in an absolute PATH folder, so this command was NOT checked. Install it from https://alalanet.com/dl and put it on PATH.\\\"}\"'",
+            "commandWindows": "set NoDefaultCurrentDirectoryInExePath=1& (for %c in (.) do @for /f \"delims=\" %i in ('where $PATH:alalanet-agent.exe 2^>nul') do @if /i not \"%~dpi\"==\"%~fc\\\" (\"%i\" hook codex& exit))& echo {\"systemMessage\":\"alalanet guard: no executable alalanet-agent in an absolute PATH folder, so this command was NOT checked. Install it from https://alalanet.com/dl and put it on PATH.\"}",
             "timeout": 30
           }
         ]
