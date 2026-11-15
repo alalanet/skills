@@ -1,6 +1,6 @@
 # alalanet skills
 
-Agent Skills and the `alalanet-guard` plugins for Claude Code and Cursor by [alalanet.com](https://alalanet.com), a free trust layer for AI agents: check before your agent installs, connects or pays.
+Agent Skills and the `alalanet-guard` plugins for Claude Code, Cursor, GitHub Copilot (CLI and VS Code) and Codex by [alalanet.com](https://alalanet.com), a free trust layer for AI agents: check before your agent installs, connects or pays.
 
 | Skill | What it does |
 |---|---|
@@ -25,6 +25,24 @@ Claude Code itself matches the commands: only matching install commands are sent
 your other commands, code or files. alalanet reads only the package names or repository URL in them.
 If alalanet does not answer within 20 seconds, the hook does nothing.
 Source: [plugins/alalanet-guard](plugins/alalanet-guard).
+
+## GitHub Copilot CLI, VS Code and Codex
+
+`plugins/alalanet-guard` is also an [Agent Plugins](https://agent-plugins.org) 1.0.0 package. In these runtimes the
+check runs in `alalanet-agent`, alalanet's open-source client: install it first and put it on `PATH`
+(https://alalanet.com/dl, or `go install github.com/alalanet/alalanet-agent/cmd/alalanet-agent@latest`).
+
+| Runtime | Install |
+|---|---|
+| Copilot CLI | `copilot plugin marketplace add alalanet/skills`, then `copilot plugin install alalanet-guard@alalanet` |
+| VS Code | [Install in VS Code](https://vscode.dev/redirect?url=vscode%3A%2F%2Fchat-plugin%2Finstall%3Fsource%3Dalalanet%252Fskills%26plugin%3Dalalanet-guard), or add the marketplace `alalanet/skills` in the Agent Customizations editor |
+| Codex | `codex plugin marketplace add alalanet/skills`, then `codex plugin add alalanet-guard@alalanet`; trust the hook once in `/hooks` |
+
+Before each shell command the hook runs `alalanet-agent hook copilot` (or `hook codex`), which sends the command line
+to alalanet only when it installs or runs a package, and never your other commands, files or session. Block denies
+the command, hold asks you (Codex: denies with a note to confirm with you). Without `alalanet-agent` on `PATH` the
+hook checks nothing and says so in one line, and the command goes ahead as without the plugin. The plugin also adds
+the read-only MCP server `https://alalanet.com/mcp/guard`. Details: [plugins/alalanet-guard](plugins/alalanet-guard#github-copilot-cli-vs-code-and-codex).
 
 ## Cursor plugin
 
@@ -57,6 +75,13 @@ curl -s https://alalanet.com/v1/artifacts/<sha256>    # advice: signed_by_alalan
 ```
 
 Anything else (`unknown_hash`, a different publisher, `caution_conflicting`) means the file is not ours. The repository always holds the latest signed versions; the live copies are listed in the discovery index above.
+
+## Tests
+
+`node --test tests/` (Node.js 20 or later, no dependencies) checks the Agent Plugins package: `plugin.json` and
+`mcp.json` against the Agent Plugins 1.0.0 schemas (fetched from agent-plugins.org, or read from the folder
+`AGENT_PLUGINS_SCHEMAS` names), the Copilot and Codex hook files, the marketplaces, and the hook commands with and
+without `alalanet-agent` on `PATH` under every POSIX shell it finds (and PowerShell when `pwsh` is installed).
 
 ## License
 
