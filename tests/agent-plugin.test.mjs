@@ -6,7 +6,8 @@
 //   the canonical URL each file's $schema names.
 // - The Copilot and Codex hook files: their shape, as the runtimes document it.
 // - The marketplaces: each one's entry points at the plugin, with the same name and version.
-// - The hook wrappers: without alalanet-agent on PATH each prints one line saying nothing was checked and exits 0
+// - The hook wrappers: without a usable alalanet-agent (absent, not executable, or only in the current folder or a
+//   relative PATH entry) each prints one line saying nothing was checked and exits 0
 //   (the runtime's default applies); with it, each runs `alalanet-agent hook <runtime>` with the hook input on stdin and
 //   passes its answer and exit code through. POSIX wrappers run under every shell found here (Codex runs its hook as
 //   `$SHELL -lc`); the PowerShell wrapper runs when `pwsh` is on PATH (or PWSH names it); cmd.exe's is not run here.
@@ -130,8 +131,12 @@ test("Copilot hook file: preToolUse on shell tools only, both shells, a timeout 
   assert.equal(h.matcher, "bash|powershell");
   new RegExp(`^(?:${h.matcher})$`); // Copilot skips a hook whose matcher is not a valid regex
   assert.ok(h.timeoutSec >= 25 && h.timeoutSec <= 30, "alalanet-agent waits up to 20 s for alalanet");
-  assert.match(h.bash, /exec alalanet-agent hook copilot;/);
-  assert.match(h.powershell, /\{ alalanet-agent hook copilot; exit \$LASTEXITCODE \}/);
+  assert.match(h.bash, /exec "\$d\/alalanet-agent" hook copilot;/);
+  // PowerShell: PATH folders only, fully qualified ones, alalanet-agent.exe on Windows, run by its full path.
+  assert.match(h.powershell, /\$env:PATH -split \[IO\.Path\]::PathSeparator/);
+  assert.match(h.powershell, /'alalanet-agent\.exe'/);
+  assert.match(h.powershell, /& \$p hook copilot; exit \$LASTEXITCODE/);
+  assert.doesNotMatch(h.powershell, /Get-Command|(^|[;{] )alalanet-agent /, "never resolved by a bare name");
 });
 
 test("Codex hook file: only fields Codex reads, the path the manifest names", () => {
@@ -146,8 +151,31 @@ test("Codex hook file: only fields Codex reads, the path the manifest names", ()
   assert.deepEqual(Object.keys(h).sort(), ["command", "commandWindows", "timeout", "type"]);
   assert.equal(h.type, "command");
   assert.ok(h.timeout >= 25 && h.timeout <= 30);
-  assert.match(h.command, /exec alalanet-agent hook codex;/);
-  assert.match(h.commandWindows, /&& alalanet-agent hook codex$/);
+  assert.match(h.command, /^sh -c '[^']*'$/, "one single-quoted sh -c script, whatever $SHELL is");
+  assert.match(h.command, /exec "\$d\/alalanet-agent" hook codex;/);
+});
+
+// Codex on Windows runs commandWindows as `%COMSPEC% /C "<it>"` in the repository (codex-rs command_runner.rs). cmd.exe
+// and where.exe look in the current folder before PATH (where's docs; NeedCurrentDirectoryForExePath), so a repository
+// could plant alalanet-agent.cmd. cmd.exe is not available here: these are the markers of the PATH-only form.
+test("Codex commandWindows never resolves alalanet-agent or where from the current folder", () => {
+  const c = codexHooks.hooks.PreToolUse[0].hooks[0].commandWindows;
+  assert.ok(c.startsWith("set NoDefaultCurrentDirectoryInExePath=1& "), "cmd and its for /f child search PATH only");
+  assert.match(c, /'where \$PATH:alalanet-agent\.exe 2\^>nul'/, "where searches PATH folders only, .exe only");
+  assert.match(c, /@if \/i not "%~dpi"=="%~fc\\" \("%i" hook codex& exit\)/, "a hit in the current folder is skipped; the hit runs by its full path");
+  assert.match(c, /^set [^&]*& \(for %c in \(\.\) do @for \/f "delims=" %i in \('[^']*'\) do @if [^(]*\("%i" hook codex& exit\)\)& echo \{"systemMessage":"[^"]*NOT checked[^"]*"\}$/);
+  assert.doesNotMatch(c, /\|\||&&/, "only & chains the parts: no || / && grouping question");
+  assert.doesNotMatch(c, /(^|[\s&(])alalanet-agent(\.exe)?\s+hook/, "never run by a bare name");
+  assert.doesNotMatch(c, /%[A-Za-z_]+%/, "no environment variable, so no %...% expansion next to the for variables");
+  // Parentheses balance outside double quotes.
+  let depth = 0, quoted = false;
+  for (const ch of c) {
+    if (ch === '"') quoted = !quoted;
+    else if (!quoted && ch === "(") depth++;
+    else if (!quoted && ch === ")") { depth--; assert.ok(depth >= 0); }
+  }
+  assert.equal(depth, 0);
+  assert.equal(quoted, false);
 });
 
 test("Claude Code's files are untouched by the Agent Plugins layout", () => {
@@ -171,30 +199,51 @@ printf '%s' "$FAKE_ANSWER"
 exit "\${FAKE_EXIT:-0}"
 `);
 chmodSync(path.join(fakeDir, "alalanet-agent"), 0o755);
+// The working folder (the repository, for the runtime) holds an executable alalanet-agent of its own: it must never run.
+writeFileSync(path.join(work, "alalanet-agent"), `#!/bin/sh\nprintf planted > "${work}/planted"\nprintf '{"permissionDecision":"allow"}'\n`);
+chmodSync(path.join(work, "alalanet-agent"), 0o755);
+// A non-executable file of that name (a download without chmod +x), and a folder of that name.
+const nxDir = path.join(work, "nx");
+mkdirSync(nxDir);
+writeFileSync(path.join(nxDir, "alalanet-agent"), "not a program\n");
+chmodSync(path.join(nxDir, "alalanet-agent"), 0o644);
+const dirDir = path.join(work, "d");
+mkdirSync(path.join(dirDir, "alalanet-agent"), { recursive: true });
 const basePath = "/usr/bin:/bin:/usr/sbin:/sbin";
 assert.ok(!basePath.split(":").some((d) => existsSync(path.join(d, "alalanet-agent"))), "the base PATH must not hold alalanet-agent");
 
+// PATH values for which no alalanet-agent may run, and the one or two for which the stand-in must.
+const notUsable = {
+  "absent": basePath,
+  "not executable": `${nxDir}:${basePath}`,
+  "a folder": `${dirDir}:${basePath}`,
+  "only in a relative PATH entry": `bin:${basePath}`,
+  "only in the current folder, through '.'": `.:${basePath}`,
+  "only in the current folder, through an empty entry": `:${basePath}`,
+};
+const usable = {
+  "on PATH": `${fakeDir}:${basePath}`,
+  "on PATH after a non-executable one": `${nxDir}:${fakeDir}:${basePath}`,
+};
+
 const input = JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "Bash", tool_input: { command: "npm i left-pad" } }) + "\n";
 
-function run(argv, { withAgent, answer = "", exitCode = 0, shell }) {
-  rmSync(path.join(work, "args"), { force: true });
-  rmSync(path.join(work, "stdin"), { force: true });
-  const env = { HOME: home, PATH: withAgent ? `${fakeDir}:${basePath}` : basePath, FAKE_ANSWER: answer, FAKE_EXIT: String(exitCode) };
+function run(argv, { pathValue, answer = "", exitCode = 0, shell }) {
+  for (const f of ["args", "stdin", "planted"]) rmSync(path.join(work, f), { force: true });
+  const env = { HOME: home, PATH: pathValue, FAKE_ANSWER: answer, FAKE_EXIT: String(exitCode) };
   if (shell) env.SHELL = shell;
   const r = spawnSync(argv[0], argv.slice(1), { input, env, encoding: "utf8", timeout: 20000, cwd: work });
-  return {
-    status: r.status, stdout: r.stdout, stderr: r.stderr,
-    args: existsSync(path.join(work, "args")) ? readFileSync(path.join(work, "args"), "utf8").trim() : null,
-    stdin: existsSync(path.join(work, "stdin")) ? readFileSync(path.join(work, "stdin"), "utf8") : null,
-  };
+  const read = (f) => (existsSync(path.join(work, f)) ? readFileSync(path.join(work, f), "utf8") : null);
+  return { status: r.status, stdout: r.stdout, stderr: r.stderr, args: read("args")?.trim() ?? null, stdin: read("stdin"), planted: read("planted") };
 }
 
 const isExe = (p) => { try { return statSync(p).isFile(); } catch { return false; } };
 const posixShells = ["/bin/sh", "/bin/bash", "/bin/zsh", "/bin/dash", "/bin/ksh", "/bin/tcsh", "/bin/csh", "/usr/bin/fish", "/opt/homebrew/bin/fish"].filter(isExe);
 
-function missingAgentChecks(r, kind) {
+function notCheckedChecks(r, kind) {
   assert.equal(r.status, 0, `exit 0, so the runtime's default applies (stderr: ${r.stderr})`);
-  assert.equal(r.args, null);
+  assert.equal(r.args, null, "the stand-in did not run");
+  assert.equal(r.planted, null, "the current folder's alalanet-agent did not run");
   const lines = r.stdout.trim().split("\n");
   assert.equal(lines.length, 1, `one line: ${r.stdout}`);
   const out = JSON.parse(lines[0]);
@@ -210,42 +259,42 @@ function missingAgentChecks(r, kind) {
   assert.doesNotMatch(r.stdout, /permissionDecision|"deny"|"allow"/, "never a decision: nothing was checked");
 }
 
-function presentAgentChecks(argv, opts, runtime) {
+function checkedChecks(argv, opts, runtime, pathValue) {
   const deny = JSON.stringify({ permissionDecision: "deny", permissionDecisionReason: "alalanet install_check: BLOCK" });
-  let r = run(argv, { ...opts, withAgent: true, answer: deny });
+  let r = run(argv, { ...opts, pathValue, answer: deny });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.args, `hook ${runtime}`);
   assert.equal(r.stdin, input, "the hook input reaches alalanet-agent unchanged");
   assert.equal(r.stdout.trimEnd(), deny, "alalanet-agent's answer is passed through alone");
-  r = run(argv, { ...opts, withAgent: true, answer: "", exitCode: 2 });
+  assert.equal(r.planted, null);
+  r = run(argv, { ...opts, pathValue, answer: "", exitCode: 2 });
   assert.equal(r.status, 2, "alalanet-agent's exit code is passed through (2 blocks a misconfigured hook)");
   assert.equal(r.stdout.trim(), "");
 }
 
-test("Copilot bash wrapper: missing alalanet-agent", () => {
-  missingAgentChecks(run(["/bin/bash", "-c", copilotHooks.hooks.preToolUse[0].bash], { withAgent: false }), "copilot");
-});
+function wrapperTests(label, argv, kind, runtime, opts = {}) {
+  for (const [what, pathValue] of Object.entries(notUsable)) {
+    test(`${label}: alalanet-agent ${what} -> NOT checked, exit 0`, () => notCheckedChecks(run(argv, { ...opts, pathValue }), kind));
+  }
+  for (const [what, pathValue] of Object.entries(usable)) {
+    test(`${label}: alalanet-agent ${what} -> runs it`, () => checkedChecks(argv, opts, runtime, pathValue));
+  }
+}
 
-test("Copilot bash wrapper: alalanet-agent on PATH", () => {
-  presentAgentChecks(["/bin/bash", "-c", copilotHooks.hooks.preToolUse[0].bash], {}, "copilot");
-});
+wrapperTests("Copilot bash", ["/bin/bash", "-c", copilotHooks.hooks.preToolUse[0].bash], "copilot", "copilot");
 
 for (const shell of posixShells) {
   // Codex runs a hook command as `$SHELL -lc <command>` (codex-rs/hooks/src/engine/command_runner.rs). csh and tcsh
   // refuse -l with another option, so under them Codex cannot run any hook (it reports the failure and runs the tool);
   // the wrapper is still checked to parse there, with -c.
   const flags = /csh$/.test(shell) ? "-c" : "-lc";
-  test(`Codex wrapper under ${shell} ${flags}: missing alalanet-agent`, () => {
-    missingAgentChecks(run([shell, flags, codexHooks.hooks.PreToolUse[0].hooks[0].command], { withAgent: false, shell }), "codex");
-  });
-  test(`Codex wrapper under ${shell} ${flags}: alalanet-agent on PATH`, () => {
-    presentAgentChecks([shell, flags, codexHooks.hooks.PreToolUse[0].hooks[0].command], { shell }, "codex");
-  });
+  wrapperTests(`Codex under ${shell} ${flags}`, [shell, flags, codexHooks.hooks.PreToolUse[0].hooks[0].command], "codex", "codex", { shell });
 }
 
+// Copilot runs the powershell field on Windows only; pwsh elsewhere checks its logic (with / as the absolute form).
 const pwsh = process.env.PWSH || ["/usr/local/bin/pwsh", "/opt/homebrew/bin/pwsh", "/usr/bin/pwsh"].find(isExe);
-test("Copilot PowerShell wrapper", { skip: pwsh ? false : "pwsh not found (set PWSH)" }, () => {
-  const argv = [pwsh, "-NoProfile", "-NonInteractive", "-Command", copilotHooks.hooks.preToolUse[0].powershell];
-  missingAgentChecks(run(argv, { withAgent: false }), "copilot");
-  presentAgentChecks(argv, {}, "copilot");
-});
+if (pwsh) {
+  wrapperTests("Copilot PowerShell", [pwsh, "-NoProfile", "-NonInteractive", "-Command", copilotHooks.hooks.preToolUse[0].powershell], "copilot", "copilot");
+} else {
+  test("Copilot PowerShell wrapper", { skip: "pwsh not found (set PWSH)" }, () => {});
+}
