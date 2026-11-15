@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "bash|powershell",
+        "bash": "command -v alalanet-agent >/dev/null 2>&1 && exec alalanet-agent hook copilot; printf '%s\\n' '{\"type\":\"progress\",\"message\":\"alalanet guard: alalanet-agent is not installed, so this command was NOT checked. Install it from https://alalanet.com/dl and put it on PATH.\"}'",
+        "powershell": "if (Get-Command alalanet-agent -CommandType Application -ErrorAction SilentlyContinue) { alalanet-agent hook copilot; exit $LASTEXITCODE }; [ordered]@{type='progress';message='alalanet guard: alalanet-agent is not installed, so this command was NOT checked. Install it from https://alalanet.com/dl and put it on PATH.'} | ConvertTo-Json -Compress; exit 0",
+        "timeoutSec": 30
+      }
+    ]
+  }
+}

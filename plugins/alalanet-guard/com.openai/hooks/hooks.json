@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'command -v alalanet-agent >/dev/null 2>&1 && exec alalanet-agent hook codex; echo \"{\\\"systemMessage\\\":\\\"alalanet guard: alalanet-agent is not installed, so this command was NOT checked. Install it from https://alalanet.com/dl and put it on PATH.\\\"}\"'",
+            "commandWindows": "where /q alalanet-agent || (echo {\"systemMessage\":\"alalanet guard: alalanet-agent is not installed, so this command was NOT checked. Install it from https://alalanet.com/dl and put it on PATH.\"}& exit 0) && alalanet-agent hook codex",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

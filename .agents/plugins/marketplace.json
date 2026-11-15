@@ -1,0 +1,20 @@
+{
+  "name": "alalanet",
+  "interface": {
+    "displayName": "alalanet"
+  },
+  "plugins": [
+    {
+      "name": "alalanet-guard",
+      "source": {
+        "source": "local",
+        "path": "./plugins/alalanet-guard"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Security"
+    }
+  ]
+}
