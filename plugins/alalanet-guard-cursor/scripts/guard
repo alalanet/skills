@@ -5,7 +5,8 @@
 # typed and nothing else, to alalanet's install check when a word in it names a program alalanet reads: npm, pnpm,
 # yarn, bun, npx, bunx, pnpx, pip, pip3, pipx, uv, uvx, deno, skills, clawhub, openclaw; claude, codex or gemini
 # followed by mcp; or the options --install-extension and --add-mcp. Words are read case-insensitively, with quotes
-# and backslashes ignored, and may be a path (C:\nodejs\npx.cmd). The pattern is scripts/pattern.txt, the same text
+# and backslashes (also a backslash-newline) ignored, and may be a path (C:\nodejs\npx.cmd); a line with ANSI-C
+# quoting ($'\...') is sent whatever it names. The pattern is scripts/pattern.txt, the same text
 # as the matcher in hooks/hooks.json. alalanet decides; this filter only keeps other commands on the machine.
 # It prints Cursor's answer on stdout:
 #   block   -> {"permission":"deny"} with alalanet's reason
@@ -70,12 +71,13 @@ fi
 command=${command#=}
 
 # The filter reads the command's text: the JSON escapes read back in one pass (\\ first, through a byte JSON never
-# leaves raw), control characters as spaces. Every \s of the pattern is inside brackets, so [:space:] replaces it.
+# leaves raw), a backslash-newline removed as a shell removes it, other control characters as spaces. The pattern's
+# \n (only inside brackets) is dropped for that reason, and every \s of it is inside brackets, so [:space:] replaces it.
 here=$(dirname "$0")
-pattern=$(sed 's/\\s/[:space:]/g' "$here/pattern.txt" 2>/dev/null)
+pattern=$(sed -e 's/\\n//g' -e 's/\\s/[:space:]/g' "$here/pattern.txt" 2>/dev/null)
 [ -n "$pattern" ] || hold "the plugin's pattern file is missing"
 soh=$(printf '\001')
-plain=$(printf '%s\n' "$command" | sed -e 's/\\\\/'"$soh"'/g' -e 's/\\[nrtbf]/ /g' -e 's/\\u[0-9a-fA-F]\{4\}/ /g' \
+plain=$(printf '%s\n' "$command" | sed -e 's/\\\\/'"$soh"'/g' -e 's/'"$soh"'\\n//g' -e 's/\\[nrtbf]/ /g' -e 's/\\u[0-9a-fA-F]\{4\}/ /g' \
 	-e 's/\\"/"/g' -e 's/\\\//\//g' -e 's/'"$soh"'/\\/g')
 printf '%s\n' "$plain" | grep -Eq -- "$pattern" || answer allow
 

@@ -18,9 +18,17 @@ agent to confirm with you. If you agree, run the command yourself.
 
 **Which lines are sent.** A command line is sent when a word in it names one of these programs: `npm`, `pnpm`,
 `yarn`, `bun`, `npx`, `bunx`, `pnpx`, `pip`, `pip3`, `pipx`, `uv`, `uvx`, `deno`, `skills`, `clawhub`, `openclaw`;
-`claude`, `codex` or `gemini` followed by `mcp`; or the IDE options `--install-extension` and `--add-mcp`. Words are
-read in any case, with quotes and backslashes ignored, also as a path (`C:\Program Files\nodejs\npx.cmd`,
-`/usr/local/bin/npm`) or with `.cmd`, `.exe`, `.bat`, `.ps1`. alalanet then reads the line as a shell would and decides:
+`claude`, `codex` or `gemini` followed by `mcp`; or the IDE options `--install-extension` and `--add-mcp`. Exactly:
+- letters match in any case, and quotes, backslashes and newlines between or around them are skipped (so `"npx"`,
+  `n\px`, `np''x` and a backslash-newline inside the word count);
+- a word starts at the start of the line or after a space, a quote, a backtick, `/`, `\` or one of `;&|()<>{},=`, so
+  a path counts (`C:\Program Files\nodejs\npx.cmd`, `/usr/local/bin/npm`);
+- it ends at the end of the line or before a space, a quote, a backtick or one of `;&|()<>{},=:@`, optionally after
+  `.cmd`, `.exe`, `.bat` or `.ps1` in any case (so `npm-run-all`, `npmx` and `npm.js` do not count);
+- `claude`, `codex` or `gemini` and `mcp` may be separated by spaces, quotes or backslashes;
+- a line that holds `$'` followed by a backslash (ANSI-C quoting, which can spell any word) is sent whatever it names.
+
+alalanet then reads the line as a shell would and decides:
 installs, `create`/`init`, `dlx`/`exec`/`x`, `python -m pip`, `uv run --with`, `deno` with `npm:`/`jsr:`/`https:`,
 `claude mcp add`/`add-json`, `code --add-mcp` and `--install-extension`, and registry changes (`npm ci --registry …`,
 `npm config set registry …`, `npm_config_registry=… npm ci`). Lines that name none of these programs are not sent
@@ -52,9 +60,10 @@ Linux without `curl` the hook says so on stderr and lets installs go ahead, or h
 ## How it works
 
 `hooks/hooks.json` declares one `beforeShellExecution` hook with a `matcher`: a regular expression for the
-program words above (`scripts/pattern.txt` holds the same text; it has no nested repetition, so a 1 MB command is
-tested in milliseconds). Cursor tests each shell command against it and runs the hook only for commands that
-match. The hook runs `./scripts/guard`: on macOS and Linux that is the `sh` script `scripts/guard`; on Windows,
+program words above (`scripts/pattern.txt` holds the same text). No two of its quantifiers can match the same
+characters one after the other, so the test is linear in the command's length: on 27 adversarial 1 MB inputs
+(runs of quotes, backslashes and newlines after a program word, among others) node took at most 25 ms each here.
+Cursor tests each shell command against it and runs the hook only for commands that match. The hook runs `./scripts/guard`: on macOS and Linux that is the `sh` script `scripts/guard`; on Windows,
 PowerShell finds `scripts/guard.cmd` (through `PATHEXT`), which runs `scripts/guard-windows.ps1`.
 
 The script reads the `command` field of Cursor's hook input and nothing else, tests it against the same

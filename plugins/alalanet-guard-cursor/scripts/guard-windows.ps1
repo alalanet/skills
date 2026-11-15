@@ -19,7 +19,6 @@ $ProgressPreference = 'SilentlyContinue'
 $Version = '1.0.0'
 $DeadlineMs = 18000
 $MaxAnswer = 65536
-$Envelope = 79 # bytes of {"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":""}}
 $Api = 'https://alalanet.com'
 if ($env:ALALANET_API) { $Api = $env:ALALANET_API }
 $Api = $Api.TrimEnd('/')
@@ -77,9 +76,18 @@ if (-not $named) { Answer 'allow' }
 if ($Api -notmatch '^(https://|http://(127\.0\.0\.1|localhost):[0-9]+(/|$))') {
 	Hold 'ALALANET_API is not an https URL (plain http only to 127.0.0.1 or localhost)'
 }
-if ([Text.Encoding]::UTF8.GetByteCount($command) -gt (1048576 - $Envelope)) { Hold 'the command is too large for alalanet to read' }
 $body = AsciiJson (ConvertTo-Json -Compress -Depth 3 -InputObject ([ordered]@{
 	hook_event_name = 'PreToolUse'; tool_name = 'Bash'; tool_input = [ordered]@{ command = $command } }))
+# The body is ASCII, so its length is its size in bytes; the server reads at most 1 MiB of it.
+if ($body.Length -gt 1048576) { Hold 'the command is too large for alalanet to read' }
+
+# One timer over the whole request (name lookup, connection, headers and body), whatever the runtime does with its
+# own timeouts: every wait below gets only what is left of it.
+$clock = [Diagnostics.Stopwatch]::StartNew()
+function Left { return [int][Math]::Max(0, $DeadlineMs - $clock.ElapsedMilliseconds) }
+# Finished: waits for a task within the time left; $false when the time ran out.
+function Finished($t) { try { return $t.Wait((Left)) } catch { return $true } }
+function Late { NotChecked 'alalanet did not answer in full within 18 seconds' }
 
 try {
 	Add-Type -AssemblyName System.Net.Http
@@ -88,27 +96,33 @@ try {
 	$handler.AllowAutoRedirect = $false
 	$client = New-Object System.Net.Http.HttpClient($handler)
 	$client.Timeout = [TimeSpan]::FromMilliseconds($DeadlineMs)
-	$client.MaxResponseContentBufferSize = $MaxAnswer
 	$null = $client.DefaultRequestHeaders.TryAddWithoutValidation('User-Agent', "alalanet-guard-cursor/$Version (hook cursor)")
-	$content = New-Object System.Net.Http.ByteArrayContent(, [Text.Encoding]::ASCII.GetBytes($body))
-	$content.Headers.ContentType = New-Object System.Net.Http.Headers.MediaTypeHeaderValue('application/json')
-	$task = $client.PostAsync("$Api/v1/hooks/claude-code", $content)
+	$request = New-Object System.Net.Http.HttpRequestMessage([System.Net.Http.HttpMethod]::Post, "$Api/v1/hooks/claude-code")
+	$request.Content = New-Object System.Net.Http.ByteArrayContent(, [Text.Encoding]::ASCII.GetBytes($body))
+	$request.Content.Headers.ContentType = New-Object System.Net.Http.Headers.MediaTypeHeaderValue('application/json')
+	# headers first; the body is read below, counted byte by byte
+	$task = $client.SendAsync($request, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead)
 } catch { NotChecked 'the request to alalanet could not be made' }
-# One timer over the whole request, whatever the runtime does with its own timeouts.
-$done = $false
-try { $done = $task.Wait($DeadlineMs) } catch { $done = $true }
-if (-not $done) { NotChecked 'alalanet did not answer in full within 18 seconds' }
-if ($task.IsCanceled) { NotChecked 'alalanet did not answer in full within 18 seconds' }
-if ($task.IsFaulted) {
-	$e = $task.Exception.GetBaseException()
-	if ($e.Message -match 'buffer|size') { NotChecked "alalanet's answer is larger than $MaxAnswer bytes" }
-	NotChecked 'alalanet could not be reached'
-}
+if (-not (Finished $task)) { Late }
+if ($task.IsCanceled) { Late }
+if ($task.IsFaulted) { NotChecked 'alalanet could not be reached' }
 $r = $task.Result
 if ([int]$r.StatusCode -ne 200) { NotChecked ("alalanet answered HTTP " + [int]$r.StatusCode) }
-$bytes = $r.Content.ReadAsByteArrayAsync().Result
-if ($bytes.Length -gt $MaxAnswer) { NotChecked "alalanet's answer is larger than $MaxAnswer bytes" }
-$answer = [Text.Encoding]::UTF8.GetString($bytes)
+$st = $r.Content.ReadAsStreamAsync()
+if (-not (Finished $st)) { Late }
+if ($st.IsFaulted -or $st.IsCanceled) { NotChecked "alalanet's answer could not be read" }
+$stream = $st.Result
+$buf = New-Object byte[] ($MaxAnswer + 1)
+$n = 0
+while ($n -lt $buf.Length) {
+	$rd = $stream.ReadAsync($buf, $n, $buf.Length - $n)
+	if (-not (Finished $rd)) { Late }
+	if ($rd.IsFaulted -or $rd.IsCanceled) { NotChecked "alalanet's answer could not be read" }
+	if ($rd.Result -eq 0) { break }
+	$n += $rd.Result
+}
+if ($n -gt $MaxAnswer) { NotChecked "alalanet's answer is larger than $MaxAnswer bytes" }
+$answer = [Text.Encoding]::UTF8.GetString($buf, 0, $n)
 $values = $null
 $dailyLimit = $r.Headers.TryGetValues('Alalanet-Not-Checked', [ref]$values) -and (@($values) -contains 'daily-limit')
 
