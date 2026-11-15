@@ -1,9 +1,10 @@
 // Checks for the Agent Plugins package in plugins/alalanet-guard (Copilot CLI, VS Code, Codex) and its hook wrappers.
-// Run from the repository root: node --test tests/
+// Run from the repository root: node --test tests/agent-plugin.test.mjs (Node 22 reads a bare folder argument as a
+// module, not as a folder of tests)
 //
 // - plugin.json and mcp.json against the Agent Plugins 1.0.0 JSON schemas. The schemas are read from
 //   AGENT_PLUGINS_SCHEMAS (a folder holding plugin.schema.json and mcp.schema.json) when it is set, else fetched from
-//   the canonical URL each file's $schema names.
+//   the canonical URL each file's $schema names; AGENT_PLUGINS_SCHEMAS=skip skips those two tests.
 // - The Copilot and Codex hook files: their shape, as the runtimes document it.
 // - The marketplaces: each one's entry points at the plugin, with the same name and version.
 // - The hook wrappers: without a usable alalanet-agent (absent, not executable, or only in the current folder or a
@@ -67,6 +68,9 @@ function check(schema, root, v, at, errs) {
   }
 }
 
+// AGENT_PLUGINS_SCHEMAS=skip skips the two schema tests (CI that downloads nothing).
+const schemaSkip = process.env.AGENT_PLUGINS_SCHEMAS === "skip" ? "AGENT_PLUGINS_SCHEMAS=skip" : false;
+
 async function schemaFor(id) {
   const dir = process.env.AGENT_PLUGINS_SCHEMAS;
   if (dir) return load(path.join(dir, path.basename(new URL(id).pathname)));
@@ -75,7 +79,7 @@ async function schemaFor(id) {
   return res.json();
 }
 
-test("plugin.json conforms to Agent Plugins 1.0.0", async () => {
+test("plugin.json conforms to Agent Plugins 1.0.0", { skip: schemaSkip }, async () => {
   assert.equal(manifest.$schema, "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json");
   const schema = await schemaFor(manifest.$schema);
   assert.equal(schema.$id, manifest.$schema);
@@ -84,7 +88,7 @@ test("plugin.json conforms to Agent Plugins 1.0.0", async () => {
   assert.deepEqual(errs, []);
 });
 
-test("mcp.json conforms to Agent Plugins 1.0.0 and adds only the read-only guard server", async () => {
+test("mcp.json conforms to Agent Plugins 1.0.0 and adds only the read-only guard server", { skip: schemaSkip }, async () => {
   assert.equal(mcp.$schema, "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json");
   // Spec 10.1: mcp.json targets the same Agent Plugins version as plugin.json.
   assert.equal(path.dirname(mcp.$schema), path.dirname(manifest.$schema));
@@ -231,6 +235,8 @@ const input = JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "Bash",
 function run(argv, { pathValue, answer = "", exitCode = 0, shell }) {
   for (const f of ["args", "stdin", "planted"]) rmSync(path.join(work, f), { force: true });
   const env = { HOME: home, PATH: pathValue, FAKE_ANSWER: answer, FAKE_EXIT: String(exitCode) };
+  // pwsh without ICU (a slim container) needs this one to start at all.
+  if (process.env.DOTNET_SYSTEM_GLOBALIZATION_INVARIANT) env.DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = process.env.DOTNET_SYSTEM_GLOBALIZATION_INVARIANT;
   if (shell) env.SHELL = shell;
   const r = spawnSync(argv[0], argv.slice(1), { input, env, encoding: "utf8", timeout: 20000, cwd: work });
   const read = (f) => (existsSync(path.join(work, f)) ? readFileSync(path.join(work, f), "utf8") : null);
@@ -287,7 +293,12 @@ for (const shell of posixShells) {
   // Codex runs a hook command as `$SHELL -lc <command>` (codex-rs/hooks/src/engine/command_runner.rs). csh and tcsh
   // refuse -l with another option, so under them Codex cannot run any hook (it reports the failure and runs the tool);
   // the wrapper is still checked to parse there, with -c.
-  const flags = /csh$/.test(shell) ? "-c" : "-lc";
+  // Some systems' login startup sets PATH outright (Debian's /etc/profile), so under -lc the PATH a test gives never
+  // reaches the wrapper; Codex users there need alalanet-agent in a folder their login PATH holds. For such a shell the
+  // wrapper is run with -c, which is the same script with the PATH the test gives.
+  const probe = spawnSync(shell, ["-lc", 'printf %s "$PATH"'], { env: { HOME: home, PATH: `/alalanet-probe:${basePath}` }, encoding: "utf8" });
+  const loginKeepsPath = probe.status === 0 && probe.stdout.split(":").includes("/alalanet-probe"); // macOS's path_helper reorders, keeps it
+  const flags = /csh$/.test(shell) || !loginKeepsPath ? "-c" : "-lc";
   wrapperTests(`Codex under ${shell} ${flags}`, [shell, flags, codexHooks.hooks.PreToolUse[0].hooks[0].command], "codex", "codex", { shell });
 }
 

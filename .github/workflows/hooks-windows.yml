@@ -1,0 +1,44 @@
+# Runs the alalanet-guard hook commands the way the runtimes start them:
+# - windows-latest: the Windows forms (Codex's commandWindows through %COMSPEC% /C in a scratch "repository" folder;
+#   Copilot's powershell field under Windows PowerShell 5.1 and pwsh) with a stand-in alalanet-agent.exe built in the
+#   job, and a planted alalanet-agent.cmd/.bat/.exe in the current folder that must never run (tests/windows-hooks.ps1).
+# - ubuntu-latest, as a control: node --test tests/agent-plugin.test.mjs (the POSIX forms under the shells present, and pwsh) and
+#   shellcheck of the POSIX forms.
+# Nothing is downloaded but this repository; no secrets.
+name: hooks-windows
+
+on:
+  push:
+    branches: [agent-plugin]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Windows forms of the hooks
+        shell: pwsh
+        run: pwsh -NoProfile -File tests/windows-hooks.ps1
+
+  ubuntu-control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: POSIX and pwsh forms (node --test)
+        env:
+          AGENT_PLUGINS_SCHEMAS: skip # the schemas are checked where they can be fetched; this job downloads nothing
+        run: node --test tests/agent-plugin.test.mjs
+      - name: shellcheck of the POSIX forms
+        run: |
+          node tests/extract-posix-hooks.mjs "$RUNNER_TEMP/hooks"
+          shellcheck "$RUNNER_TEMP/hooks/copilot.sh" "$RUNNER_TEMP/hooks/codex.sh" "$RUNNER_TEMP/hooks/codex-inner.sh"

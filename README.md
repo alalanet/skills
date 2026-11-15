@@ -79,7 +79,7 @@ Anything else (`unknown_hash`, a different publisher, `caution_conflicting`) mea
 
 ## Tests
 
-`node --test tests/` (Node.js 20 or later, no dependencies) checks the Agent Plugins package: `plugin.json` and
+`node --test tests/agent-plugin.test.mjs` (Node.js 20 or later, no dependencies) checks the Agent Plugins package: `plugin.json` and
 `mcp.json` against the Agent Plugins 1.0.0 schemas (fetched from agent-plugins.org, or read from the folder
 `AGENT_PLUGINS_SCHEMAS` names), the Copilot and Codex hook files, the marketplaces, and the hook commands under
 every POSIX shell it finds (and PowerShell when `pwsh` is installed): with `alalanet-agent` on `PATH`, without it,

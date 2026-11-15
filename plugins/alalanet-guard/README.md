@@ -78,7 +78,9 @@ codex plugin add alalanet-guard@alalanet
 ```
 
 Codex runs a plugin's hook only after you trust it: open `/hooks` in the CLI (in the app, **Review hooks**) and trust
-the alalanet hook once, and again after an update changes it. Until then nothing is checked.
+the alalanet hook once, and again after an update changes it. Until then nothing is checked. Codex starts hooks
+through your login shell (`$SHELL -lc`), so put alalanet-agent in a folder that your login `PATH` holds (on Debian,
+`/etc/profile` sets `PATH` itself, for example).
 
 **What runs.** Copilot (CLI and VS Code) runs `alalanet-agent hook copilot` before each `bash` and `powershell` tool
 call (`com.github.copilot/hooks/hooks.json`, event `preToolUse`); Codex runs `alalanet-agent hook codex` before each
