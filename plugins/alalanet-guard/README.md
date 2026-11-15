@@ -55,8 +55,8 @@ nothing and your normal permission flow applies.
 
 These runtimes run the check through `alalanet-agent`, alalanet's open-source (Apache-2.0) client. Install it
 first and make sure it is on `PATH`: signed binaries for macOS, Linux and Windows are at https://alalanet.com/dl
-(with `SHA256SUMS`), or `go install github.com/alalanet/alalanet-agent/cmd/alalanet-agent@latest`. The hook calls
-the installed binary by name; the plugin never downloads code to run it.
+(with `SHA256SUMS`), or `go install github.com/alalanet/alalanet-agent/cmd/alalanet-agent@latest`. The hook runs
+the installed binary; the plugin never downloads code to run it.
 
 **GitHub Copilot CLI**
 
@@ -88,17 +88,28 @@ with the reason; hold asks you in Copilot, and in Codex denies with a reason tha
 you; anything else gets no answer, and the runtime's own approval rules apply. If alalanet cannot be reached, the
 command goes ahead unchecked with one line on stderr; `ALALANET_FAIL_CLOSED=1` holds it instead.
 
-**When alalanet-agent is not installed.** The hook does not fail and does not pretend to check: it prints one line,
-*alalanet guard: alalanet-agent is not installed, so this command was NOT checked. Install it from
-https://alalanet.com/dl and put it on PATH.*, and lets the runtime's default go ahead. Copilot CLI shows it as a
-progress line, Codex as a warning. (Without this, a missing command would make Copilot deny every shell call, since a
-`preToolUse` hook that exits non-zero denies the call, and Codex would report a failed hook on each one.)
+**Which alalanet-agent runs.** The hook looks for it itself, in the `PATH` folders that are absolute paths, and runs
+the first regular, executable file named `alalanet-agent` (on Windows, only `alalanet-agent.exe`) by its full path.
+It never takes one from the folder the agent works in: not through `.`, an empty or a relative `PATH` entry, and on
+Windows not through cmd's or `where`'s habit of looking in the current folder first. A repository cannot put its own
+`alalanet-agent` in front of yours.
+
+**When alalanet-agent is not installed** (or the file is not executable, for example a download without
+`chmod +x`). The hook does not fail and does not pretend to check: it prints one line, *alalanet guard: no executable
+alalanet-agent in an absolute PATH folder, so this command was NOT checked. Install it from https://alalanet.com/dl
+and put it on PATH.*, and lets the runtime's default go ahead. Copilot CLI shows it as a progress line, Codex as a
+warning. (Without this, a missing command would make Copilot deny every shell call, since a `preToolUse` hook that
+exits non-zero denies the call, and Codex would report a failed hook on each one.)
 
 Not covered: input typed into an already running process, a script written to disk and then run, and MCP tools that
-run commands. Codex cannot run hooks when your login shell is csh or tcsh (it starts them as `$SHELL -lc`).
+run commands. Codex cannot run hooks when your login shell is csh or tcsh (it starts them as `$SHELL -lc`), and if
+your login profile (`~/.zprofile`, `~/.bash_profile`, …) prints text, Codex may not read the hook's answer. The
+Windows forms of the hooks (`powershell` for Copilot, `commandWindows` for Codex) have not been run on Windows yet.
 
 **MCP server.** `mcp.json` adds `alalanet-guard`, the read-only server `https://alalanet.com/mcp/guard`, with no
-key. The `install-guard` skill tells the agent to call its `install_check` before an install.
+key. The `install-guard` skill tells the agent to call its `install_check` before an install. If you already have a
+server named `alalanet-guard` (for example from the install links below, which point at the same URL), Copilot CLI
+uses the plugin's entry and Codex keeps yours; either way there is one `alalanet-guard`, not two copies of its tools.
 
 ## Cursor
 
@@ -140,6 +151,10 @@ Both:
   environment. No account or key is needed.
 - Verdicts (target, decision, reasons) are signed into alalanet's public transparency log, without
   anything about who asked.
+- A remote MCP server named in a checked `… mcp add` line, or checked with the MCP tools, that no catalogue lists
+  joins alalanet's public directory if it answers as an MCP server: it gets a public page at `alalanet.com/s/<id>`,
+  its check is signed into the log, and the page is announced to search engines. If its URL looks like it carries a
+  key or token, or its query holds more than plain inputs, it is checked for you only: not signed, stored or listed.
 - Full policy: https://alalanet.com/privacy
 
 ## Files

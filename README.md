@@ -40,8 +40,9 @@ check runs in `alalanet-agent`, alalanet's open-source client: install it first 
 
 Before each shell command the hook runs `alalanet-agent hook copilot` (or `hook codex`), which sends the command line
 to alalanet only when it installs or runs a package, and never your other commands, files or session. Block denies
-the command, hold asks you (Codex: denies with a note to confirm with you). Without `alalanet-agent` on `PATH` the
-hook checks nothing and says so in one line, and the command goes ahead as without the plugin. The plugin also adds
+the command, hold asks you (Codex: denies with a note to confirm with you). The hook runs only an `alalanet-agent`
+from an absolute `PATH` folder, never one from the repository the agent works in. Without a usable one it checks
+nothing and says so in one line, and the command goes ahead as without the plugin. The plugin also adds
 the read-only MCP server `https://alalanet.com/mcp/guard`. Details: [plugins/alalanet-guard](plugins/alalanet-guard#github-copilot-cli-vs-code-and-codex).
 
 ## Cursor plugin
@@ -80,8 +81,10 @@ Anything else (`unknown_hash`, a different publisher, `caution_conflicting`) mea
 
 `node --test tests/` (Node.js 20 or later, no dependencies) checks the Agent Plugins package: `plugin.json` and
 `mcp.json` against the Agent Plugins 1.0.0 schemas (fetched from agent-plugins.org, or read from the folder
-`AGENT_PLUGINS_SCHEMAS` names), the Copilot and Codex hook files, the marketplaces, and the hook commands with and
-without `alalanet-agent` on `PATH` under every POSIX shell it finds (and PowerShell when `pwsh` is installed).
+`AGENT_PLUGINS_SCHEMAS` names), the Copilot and Codex hook files, the marketplaces, and the hook commands under
+every POSIX shell it finds (and PowerShell when `pwsh` is installed): with `alalanet-agent` on `PATH`, without it,
+not executable, and only in the current folder or a relative `PATH` entry (never run). The Windows `commandWindows`
+form is checked for its PATH-only markers; it is not run.
 
 ## License
 
