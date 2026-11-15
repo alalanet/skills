@@ -55,8 +55,8 @@ nothing and your normal permission flow applies.
 
 These runtimes run the check through `alalanet-agent`, alalanet's open-source (Apache-2.0) client. Install it
 first and make sure it is on `PATH`: signed binaries for macOS, Linux and Windows are at https://alalanet.com/dl
-(with `SHA256SUMS`), or `go install github.com/alalanet/alalanet-agent/cmd/alalanet-agent@latest`. The hook runs
-the installed binary; the plugin never downloads code to run it.
+(with `SHA256SUMS`), or `go install github.com/alalanet/alalanet-agent/cmd/alalanet-agent@latest` (into `~/go/bin`; for
+Codex on Debian see below). The hook runs the installed binary; the plugin never downloads code to run it.
 
 **GitHub Copilot CLI**
 
@@ -78,9 +78,13 @@ codex plugin add alalanet-guard@alalanet
 ```
 
 Codex runs a plugin's hook only after you trust it: open `/hooks` in the CLI (in the app, **Review hooks**) and trust
-the alalanet hook once, and again after an update changes it. Until then nothing is checked. Codex starts hooks
-through your login shell (`$SHELL -lc`), so put alalanet-agent in a folder that your login `PATH` holds (on Debian,
-`/etc/profile` sets `PATH` itself, for example).
+the alalanet hook once, and again after an update changes it. Until then nothing is checked.
+
+Codex starts hooks through your login shell (`$SHELL -lc`), so alalanet-agent must be in a folder your *login* `PATH`
+holds. On Debian 12 and 13, `/etc/profile` sets `PATH` itself: only `/usr/local/bin`, `/usr/bin`, `/bin`, and
+`~/.local/bin` or `~/bin` if that folder already existed, survive. Install alalanet-agent to `/usr/local/bin` or
+`~/.local/bin` there. `go install` puts it in `~/go/bin`, which Codex hooks on Debian do not see (every call then says
+NOT checked).
 
 **What runs.** Copilot (CLI and VS Code) runs `alalanet-agent hook copilot` before each `bash` and `powershell` tool
 call (`com.github.copilot/hooks/hooks.json`, event `preToolUse`); Codex runs `alalanet-agent hook codex` before each
@@ -90,23 +94,28 @@ with the reason; hold asks you in Copilot, and in Codex denies with a reason tha
 you; anything else gets no answer, and the runtime's own approval rules apply. If alalanet cannot be reached, the
 command goes ahead unchecked with one line on stderr; `ALALANET_FAIL_CLOSED=1` holds it instead.
 
-**Which alalanet-agent runs.** The hook looks for it itself, in the `PATH` folders that are absolute paths, and runs
-the first regular, executable file named `alalanet-agent` (on Windows, only `alalanet-agent.exe`) by its full path.
-It never takes one from the folder the agent works in: not through `.`, an empty or a relative `PATH` entry, and on
-Windows not through cmd's or `where`'s habit of looking in the current folder first. A repository cannot put its own
-`alalanet-agent` in front of yours.
+**Which alalanet-agent runs.** The hook looks for it itself and runs the first regular, executable file named
+`alalanet-agent` (on Windows, only `alalanet-agent.exe`) that is in an absolute `PATH` folder **outside the workspace**,
+by its full path. The workspace is the folder the agent works in (the hook's current folder); a folder at or under it
+is skipped, compared by whole path segments (`/x/repo2` is outside `/x/repo`), and so is a file whose symlink leads
+there. So `.`, an empty or a relative `PATH` entry, an activated in-repository `.venv/bin`, a `node_modules/.bin` that
+direnv put on `PATH`, and on Windows cmd's habit of looking in the current folder first, never supply it. If the
+workspace is `/` or a drive root, nothing on it qualifies. The guard cannot protect a `PATH` that holds other folders
+the agent can write: keep alalanet-agent in a folder only you write (`/usr/local/bin`, `~/.local/bin`), and do not
+start the agent with such folders ahead of it. On Windows, junctions and subst drives in a path are not resolved.
 
 **When alalanet-agent is not installed** (or the file is not executable, for example a download without
-`chmod +x`). The hook does not fail and does not pretend to check: it prints one line, *alalanet guard: no executable
-alalanet-agent in an absolute PATH folder, so this command was NOT checked. Install it from https://alalanet.com/dl
-and put it on PATH.*, and lets the runtime's default go ahead. Copilot CLI shows it as a progress line, Codex as a
+`chmod +x`, or only inside the workspace). The hook does not fail and does not pretend to check: it prints one line,
+*alalanet guard: no executable alalanet-agent in an absolute PATH folder outside the workspace, so this command was NOT
+checked. Install it from https://alalanet.com/dl and put it on PATH.*, and lets the runtime's default go ahead. Copilot CLI shows it as a progress line, Codex as a
 warning. (Without this, a missing command would make Copilot deny every shell call, since a `preToolUse` hook that
 exits non-zero denies the call, and Codex would report a failed hook on each one.)
 
 Not covered: input typed into an already running process, a script written to disk and then run, and MCP tools that
 run commands. Codex cannot run hooks when your login shell is csh or tcsh (it starts them as `$SHELL -lc`), and if
-your login profile (`~/.zprofile`, `~/.bash_profile`, …) prints text, Codex may not read the hook's answer. The
-Windows forms of the hooks (`powershell` for Copilot, `commandWindows` for Codex) have not been run on Windows yet.
+your login profile (`~/.zprofile`, `~/.bash_profile`, …) prints text, Codex may not read the hook's answer. On Windows,
+Codex's hook runs the same PowerShell logic as Copilot's through `powershell.exe`, so it does not run where PowerShell
+is blocked (Constrained Language Mode, AppLocker); Codex then reports a failed hook and runs the command.
 
 **MCP server.** `mcp.json` adds `alalanet-guard`, the read-only server `https://alalanet.com/mcp/guard`, with no
 key. The `install-guard` skill tells the agent to call its `install_check` before an install. If you already have a
