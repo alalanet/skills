@@ -88,7 +88,8 @@ Anything else (`unknown_hash`, a different publisher, `caution_conflicting`) mea
 every POSIX shell it finds (and PowerShell when `pwsh` is installed): with `alalanet-agent` on `PATH`, without it,
 not executable, and only inside the workspace (the current folder, a folder under it, a relative entry, a symlink
 into it: never run), and a sibling folder whose name extends the workspace's (run). The Windows forms run in the
-`hooks-windows` workflow (`tests/windows-hooks.ps1`).
+`hooks-windows` workflow (`tests/windows-hooks.ps1`). Run the tests as an ordinary user, not as root: root can
+read and run files that a user cannot, which hides permission cases.
 
 ## License
 

@@ -150,7 +150,9 @@ function psMarkers(code, runtime) {
   assert.match(code, /\.StartsWith\(\$c, \$cmp\)/, "folders at or under the current folder are skipped");
   assert.match(code, /\[StringComparison\]::OrdinalIgnoreCase/);
   assert.match(code, /LinkType/, "symbolic links are followed");
-  assert.match(code, new RegExp(`& \\$t hook ${runtime}; exit \\$LASTEXITCODE`), "the resolved path runs, not the PATH spelling");
+  assert.match(code, new RegExp(`try \\{ & \\$t hook ${runtime} \\} catch \\{ \\}; if \\(\\$null -ne \\$LASTEXITCODE\\) \\{ exit \\$LASTEXITCODE \\}`),
+    "the resolved path runs; a run that started no process moves on");
+  assert.match(code, /\.UnixMode; if \(\$w -or -not \$m -or \$m -match '\[xst\]'\)/, "no execute bit: skipped, never handed to xdg-open");
   assert.doesNotMatch(code, /Get-Command|(^|[;{] )alalanet-agent /, "never resolved by a bare name");
 }
 
@@ -217,7 +219,11 @@ const nxDir = mk("nx");
 writeFileSync(path.join(nxDir, "alalanet-agent"), "not a program\n");
 chmodSync(path.join(nxDir, "alalanet-agent"), 0o644);
 const dirDir = mk("d", "alalanet-agent");
-const basePath = "/usr/bin:/bin:/usr/sbin:/sbin";
+// A stand-in for the desktop's "open this file" helpers. pwsh on Linux hands a non-executable file to xdg-open as a
+// document (and macOS's open would do the same): it is first on every PATH, so a hook that does that leaves a mark.
+const openerDir = mk("opener");
+for (const name of ["xdg-open", "open", "gnome-open", "kde-open"]) exe(path.join(openerDir, name), `#!/bin/sh\nprintf '%s ' "$@" >> "${work}/opened"\n`);
+const basePath = `${openerDir}:/usr/bin:/bin:/usr/sbin:/sbin`;
 assert.ok(!basePath.split(":").some((d) => existsSync(path.join(d, "alalanet-agent"))), "the base PATH must not hold alalanet-agent");
 
 // PATH values for which no alalanet-agent may run, and those for which the stand-in must.
@@ -248,14 +254,14 @@ const usable = {
 const input = JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "Bash", tool_input: { command: "npm i left-pad \u2014 x" } }) + "\n";
 
 function run(argv, { pathValue, answer = "", exitCode = 0, shell }) {
-  for (const f of ["args", "stdin", "planted"]) rmSync(path.join(work, f), { force: true });
+  for (const f of ["args", "stdin", "planted", "opened"]) rmSync(path.join(work, f), { force: true });
   const env = { HOME: home, PATH: pathValue, FAKE_ANSWER: answer, FAKE_EXIT: String(exitCode) };
   // pwsh without ICU (a slim container) needs this one to start at all.
   if (process.env.DOTNET_SYSTEM_GLOBALIZATION_INVARIANT) env.DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = process.env.DOTNET_SYSTEM_GLOBALIZATION_INVARIANT;
   if (shell) env.SHELL = shell;
   const r = spawnSync(argv[0], argv.slice(1), { input, env, encoding: "utf8", timeout: 20000, cwd: ws });
   const read = (f) => (existsSync(path.join(work, f)) ? readFileSync(path.join(work, f), "utf8") : null);
-  return { status: r.status, stdout: r.stdout, stderr: r.stderr, args: read("args")?.trim() ?? null, stdin: read("stdin"), planted: read("planted") };
+  return { status: r.status, stdout: r.stdout, stderr: r.stderr, args: read("args")?.trim() ?? null, stdin: read("stdin"), planted: read("planted"), opened: read("opened") };
 }
 
 const isExe = (p) => { try { return statSync(p).isFile(); } catch { return false; } };
@@ -265,6 +271,7 @@ function notCheckedChecks(r, kind) {
   assert.equal(r.status, 0, `exit 0, so the runtime's default applies (stderr: ${r.stderr})`);
   assert.equal(r.args, null, "the stand-in did not run");
   assert.equal(r.planted, null, "no alalanet-agent from the workspace ran");
+  assert.equal(r.opened, null, "no file was handed to a desktop opener");
   const lines = r.stdout.trim().split("\n");
   assert.equal(lines.length, 1, `one line: ${r.stdout}`);
   const out = JSON.parse(lines[0]);
@@ -288,6 +295,7 @@ function checkedChecks(argv, opts, runtime, pathValue) {
   assert.equal(r.stdin, input, "the hook input reaches alalanet-agent unchanged");
   assert.equal(r.stdout.trimEnd(), deny, "alalanet-agent's answer is passed through alone");
   assert.equal(r.planted, null);
+  assert.equal(r.opened, null, "no file was handed to a desktop opener");
   r = run(argv, { ...opts, pathValue, answer: "", exitCode: 2 });
   assert.equal(r.status, 2, "alalanet-agent's exit code is passed through (2 blocks a misconfigured hook)");
   assert.equal(r.stdout.trim(), "");
