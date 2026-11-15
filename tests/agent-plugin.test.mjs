@@ -152,7 +152,7 @@ function psMarkers(code, runtime) {
   assert.match(code, /LinkType/, "symbolic links are followed");
   assert.match(code, new RegExp(`try \\{ & \\$t hook ${runtime} \\} catch \\{ \\}; if \\(\\$null -ne \\$LASTEXITCODE\\) \\{ exit \\$LASTEXITCODE \\}`),
     "the resolved path runs; a run that started no process moves on");
-  assert.match(code, /\.UnixMode; if \(\$w -or -not \$m -or \$m -match '\[xst\]'\)/, "no execute bit: skipped, never handed to xdg-open");
+  assert.match(code, /\.UnixMode; if \(\$w -or -not \$m -or \$m -cmatch '\[xst\]'\)/, "no execute bit (case-sensitive: S and T mean none): skipped, never handed to xdg-open");
   assert.doesNotMatch(code, /Get-Command|(^|[;{] )alalanet-agent /, "never resolved by a bare name");
 }
 
