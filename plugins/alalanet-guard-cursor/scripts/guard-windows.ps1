@@ -66,7 +66,7 @@ if ($command -isnot [string]) { Hold 'the hook could not read the command' }
 # Only lines that name a program alalanet reads leave the machine.
 try { $Pattern = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'pattern.txt')).Trim() } catch { $Pattern = '' }
 if (-not $Pattern) { Hold "the plugin's pattern file is missing" }
-# Compiled: about ten times faster than the interpreter on long lines; the pattern has no nested repetition.
+# Compiled: about ten times faster than the interpreter on long lines; no two quantifiers in the pattern share input.
 try {
 	$rx = New-Object System.Text.RegularExpressions.Regex($Pattern, [System.Text.RegularExpressions.RegexOptions]::Compiled, [TimeSpan]::FromSeconds(5))
 	$named = $rx.IsMatch($command)

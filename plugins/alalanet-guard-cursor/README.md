@@ -19,8 +19,9 @@ agent to confirm with you. If you agree, run the command yourself.
 **Which lines are sent.** A command line is sent when a word in it names one of these programs: `npm`, `pnpm`,
 `yarn`, `bun`, `npx`, `bunx`, `pnpx`, `pip`, `pip3`, `pipx`, `uv`, `uvx`, `deno`, `skills`, `clawhub`, `openclaw`;
 `claude`, `codex` or `gemini` followed by `mcp`; or the IDE options `--install-extension` and `--add-mcp`. Exactly:
-- letters match in any case, and quotes, backslashes and newlines between or around them are skipped (so `"npx"`,
-  `n\px`, `np''x` and a backslash-newline inside the word count);
+- letters match in any case, and quotes and backslashes between or around them are skipped, as is a
+  backslash-newline (so `"npx"`, `n\px`, `np''x` and `n\` + newline + `pm` count). Cursor's own matcher and the
+  Windows script also skip a bare newline inside a word; the sh script reads a bare newline as a space;
 - a word starts at the start of the line or after a space, a quote, a backtick, `/`, `\` or one of `;&|()<>{},=`, so
   a path counts (`C:\Program Files\nodejs\npx.cmd`, `/usr/local/bin/npm`);
 - it ends at the end of the line or before a space, a quote, a backtick or one of `;&|()<>{},=:@`, optionally after
@@ -84,7 +85,7 @@ with `User-Agent: alalanet-guard-cursor/<version> (hook cursor)`. It prints Curs
   without the plugin.
 - Set `ALALANET_FAIL_CLOSED=1` in the environment Cursor runs in to hold such commands instead (denied with
   `NOT CHECKED` and the reason). Recommended for sensitive work.
-- A hook input the script cannot read, a command over 1 MiB, or an `ALALANET_API` that is not `https` (plain
+- A hook input the script cannot read, a command whose request to alalanet would exceed 1 MiB, or an `ALALANET_API` that is not `https` (plain
   `http` is allowed only to `127.0.0.1` or `localhost`, for testing) holds the command with the reason.
 - If the hook itself fails (for example `powershell.exe` is blocked by policy), Cursor logs the failure and runs
   the command: the plugin's hook is not `failClosed`.
