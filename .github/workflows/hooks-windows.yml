@@ -1,7 +1,8 @@
 # Runs the alalanet-guard hook commands the way the runtimes start them:
 # - windows-latest: the Windows forms (Codex's commandWindows through %COMSPEC% /C in a scratch "repository" folder;
 #   Copilot's powershell field under Windows PowerShell 5.1 and pwsh) with a stand-in alalanet-agent.exe built in the
-#   job, and a planted alalanet-agent.cmd/.bat/.exe in the current folder that must never run (tests/windows-hooks.ps1).
+#   job, and planted alalanet-agent, where and powershell programs in the workspace and folders under it that must
+#   never run (tests/windows-hooks.ps1).
 # - ubuntu-latest, as a control: node --test tests/agent-plugin.test.mjs (the POSIX forms under the shells present, and pwsh) and
 #   shellcheck of the POSIX forms.
 # Nothing is downloaded but this repository; no secrets.
@@ -9,8 +10,16 @@ name: hooks-windows
 
 on:
   push:
-    branches: [agent-plugin]
+    branches: [main, agent-plugin]
+    paths:
+      - plugins/alalanet-guard/**
+      - tests/**
+      - .github/workflows/hooks-windows.yml
   pull_request:
+    paths:
+      - plugins/alalanet-guard/**
+      - tests/**
+      - .github/workflows/hooks-windows.yml
 
 permissions:
   contents: read
