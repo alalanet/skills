@@ -204,12 +204,12 @@ test("Claude Code's install hook sends the free device key and the plan token fr
 // Bash rules match as written (and macOS's and Git Bash's file systems run CURL as curl), so the common casings are
 // rules of their own; PowerShell rules match case-insensitively and canonicalize common aliases first
 // (code.claude.com/docs/en/permissions: "PowerShell(Get-ChildItem *) matches gci, ls, and dir as well. Matching is
-// case-insensitive."), so the cmdlet names cover irm, iwr and iex in any case — one rule each, which also starts the
-// hook fewer times for one line.
+// case-insensitive."), so the cmdlet names cover their casings; irm, iwr and iex keep rules of their own, as the docs do
+// not list which aliases are canonicalized (a line may then start the hook twice: the README says so).
 const DL_BASH = ["curl", "Curl", "CURL", "wget", "Wget", "WGET", "irm", "Irm", "IRM", "iwr", "Iwr", "IWR", "iex", "Iex", "IEX",
   "curl.exe", "CURL.EXE", "wget.exe", "WGET.EXE", "Invoke-RestMethod", "invoke-restmethod", "Invoke-WebRequest", "invoke-webrequest",
   "Invoke-Expression", "invoke-expression"];
-const DL_PS = ["curl", "curl.exe", "wget", "wget.exe", "Invoke-RestMethod", "Invoke-WebRequest", "Invoke-Expression"];
+const DL_PS = ["curl", "curl.exe", "wget", "wget.exe", "Invoke-RestMethod", "Invoke-WebRequest", "Invoke-Expression", "irm", "iwr", "iex"];
 const DL_WORDS = [...new Set([...DL_BASH, ...DL_PS, "irm", "iwr", "iex"].map((x) => x.toLowerCase()))];
 const claudeHooks = () => load(path.join(plugin, "hooks", "hooks.json")).hooks.PreToolUse[0].hooks;
 const ruleWord = (h) => h.if.match(/^(Bash|PowerShell)\((.+) \*\)$/);
@@ -278,7 +278,8 @@ const DL_KEPT = ["curl -H \"Authorization: Bearer sk-test-123\" https://api.exam
   "curl -s https://api.example.com/x | tee out.txt | wc -l", "curl https://api.example.com/x ; echo shell",
   "iex 'Write-Host hi'; irm https://api.example.com/x -Headers @{Authorization='Bearer t'}",
   "curl -s -u user:pass https://api.example.com/x | bashful", "curl -sS https://api.example.com/x\nsh build.sh",
-  "curl \"https://api.example.com/x;y\" -H \"Authorization: Bearer t\"", "curl -s 'https://api.example.com/x' ; echo \"| sh\""];
+  "curl \"https://api.example.com/x;y\" -H \"Authorization: Bearer t\"", "curl -s -H \"Authorization: Bearer sk-test-9\" \"https://api.example.com/q?a=1|sh\"",
+  "curl -s \"https://api.example.com/q?a=1|sh\"", "curl -s 'https://api.example.com/x' ; echo \"| sh\""];
 
 // the filter reads a line as the scripts do: a backslash- or backtick-newline removed, a newline a separator
 const dlPlain = (s) => s.replace(/[`\\]\r?\n/g, "").replace(/\r?\n|\r/g, " ; ");

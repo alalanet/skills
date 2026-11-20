@@ -52,8 +52,7 @@ and no Node.js or Python is needed.
 rule for `curl` would send every curl line, API calls with their tokens included. The download commands (`curl`,
 `wget`, `irm`, `iwr`, `iex`, `Invoke-RestMethod`, `Invoke-WebRequest`, `Invoke-Expression`, and `curl.exe`,
 `wget.exe`; in the Bash tool also as `Curl`, `CURL`, `Irm`, `IRM` and the like, since its rules match as written; in
-the PowerShell tool by the cmdlet names, since there Claude Code matches case-insensitively and reads `irm`, `iwr` and
-`iex` as their cmdlets) therefore have a local command hook instead: `scripts/download-guard` (`/bin/sh`, with `sed`, `grep`,
+the PowerShell tool by the cmdlet names and `irm`, `iwr`, `iex`, since there Claude Code matches case-insensitively) therefore have a local command hook instead: `scripts/download-guard` (`/bin/sh`, with `sed`, `grep`,
 `awk` and `curl`) in the Bash tool, `scripts/download-guard.ps1` in the PowerShell tool. It reads only the command and
 sends it, whole and as typed, only when a download in it feeds something that runs it: piped into a shell or an
 interpreter that runs its input (`curl … | sh`, `… | sudo bash -s`, `… | python3 -`, `irm … | iex`,

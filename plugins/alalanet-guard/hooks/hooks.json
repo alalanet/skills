@@ -1219,6 +1219,30 @@
             "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
             "timeout": 25,
             "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(irm *)",
+            "shell": "powershell",
+            "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(iwr *)",
+            "shell": "powershell",
+            "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "PowerShell(iex *)",
+            "shell": "powershell",
+            "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
           }
         ]
       }
