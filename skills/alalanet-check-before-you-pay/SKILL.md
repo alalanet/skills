@@ -8,8 +8,9 @@ description: Before installing a package, repository, skill or MCP server, check
 You are about to install a package, skill or MCP server, to spend your operator's money on an x402
 endpoint, or to rely on a remote MCP server. alalanet answers in one call, signed.
 
-Claude Code users: `/plugin install alalanet-guard --marketplace alalanet/skills` runs install_check
-automatically before every install command (block denies, hold asks).
+Claude Code users: `/plugin marketplace add alalanet/skills`, then `/plugin install alalanet-guard@alalanet`,
+runs install_check automatically before every install command (block denies, hold asks). (Claude Code v2.1.275+
+also takes the one-step `/plugin install alalanet-guard --marketplace alalanet/skills`.)
 
 ## Option A — MCP (preferred)
 Add the remote MCP server `https://alalanet.com/mcp` (streamable HTTP): the checks before installing, connecting and paying — install_check, check_repo_config, preflight_payment, check_service, verify_tools, payment_status, report_purchase, find_service. Tools marked (full) are on `https://alalanet.com/mcp/full`, which has every tool:
