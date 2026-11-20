@@ -494,7 +494,15 @@
           },
           {
             "type": "command",
-            "if": "Bash(curl.exe *)",
+            "if": "Bash(Curl *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(CURL *)",
             "shell": "bash",
             "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
             "timeout": 25,
@@ -510,7 +518,15 @@
           },
           {
             "type": "command",
-            "if": "Bash(wget.exe *)",
+            "if": "Bash(Wget *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(WGET *)",
             "shell": "bash",
             "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
             "timeout": 25,
@@ -526,7 +542,39 @@
           },
           {
             "type": "command",
+            "if": "Bash(Irm *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(IRM *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
             "if": "Bash(iwr *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(Iwr *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(IWR *)",
             "shell": "bash",
             "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
             "timeout": 25,
@@ -542,7 +590,63 @@
           },
           {
             "type": "command",
+            "if": "Bash(Iex *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(IEX *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(curl.exe *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(CURL.EXE *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(wget.exe *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(WGET.EXE *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
             "if": "Bash(Invoke-RestMethod *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(invoke-restmethod *)",
             "shell": "bash",
             "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
             "timeout": 25,
@@ -558,7 +662,23 @@
           },
           {
             "type": "command",
+            "if": "Bash(invoke-webrequest *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
             "if": "Bash(Invoke-Expression *)",
+            "shell": "bash",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
+            "timeout": 25,
+            "statusMessage": "alalanet: checking the download it runs"
+          },
+          {
+            "type": "command",
+            "if": "Bash(invoke-expression *)",
             "shell": "bash",
             "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/download-guard\"",
             "timeout": 25,
@@ -1071,38 +1191,6 @@
           {
             "type": "command",
             "if": "PowerShell(wget.exe *)",
-            "shell": "powershell",
-            "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
-            "timeout": 25,
-            "statusMessage": "alalanet: checking the download it runs"
-          },
-          {
-            "type": "command",
-            "if": "PowerShell(irm *)",
-            "shell": "powershell",
-            "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
-            "timeout": 25,
-            "statusMessage": "alalanet: checking the download it runs"
-          },
-          {
-            "type": "command",
-            "if": "PowerShell(iwr *)",
-            "shell": "powershell",
-            "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
-            "timeout": 25,
-            "statusMessage": "alalanet: checking the download it runs"
-          },
-          {
-            "type": "command",
-            "if": "PowerShell(iex *)",
-            "shell": "powershell",
-            "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
-            "timeout": 25,
-            "statusMessage": "alalanet: checking the download it runs"
-          },
-          {
-            "type": "command",
-            "if": "PowerShell(IEX *)",
             "shell": "powershell",
             "command": ". ([scriptblock]::Create([IO.File]::ReadAllText((Join-Path $env:CLAUDE_PLUGIN_ROOT 'scripts/download-guard.ps1'))))",
             "timeout": 25,

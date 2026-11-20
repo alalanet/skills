@@ -57,9 +57,12 @@ command=${command#=}
 
 # The filter reads the command's text: the JSON escapes read back in one pass (\\ first, through a byte JSON never
 # leaves raw), a backslash-newline (a POSIX shell's) or backtick-newline (PowerShell's) removed, a newline as a separator (" ; "), other control
-# characters as spaces. Every \s of the pattern is inside brackets, so [:space:] replaces it.
+# characters as spaces. Every \s of the pattern is inside brackets, so [:space:] replaces it. grep reads it with its
+# bounds dropped ({0,N} as *, {1,N} as +): its engines are automata, linear in the line without them, while GNU grep's
+# counted repetitions of a group took seconds on adversarial 64 KiB lines; the bounds are for download-guard.ps1's
+# backtracking engine. Without them the test only accepts more (a pipe further than 255 characters away too).
 here=$(dirname "$0")
-pattern=$(sed -e 's/\\s/[:space:]/g' "$here/download-pattern.txt" 2>/dev/null)
+pattern=$(sed -e 's/\\s/[:space:]/g' -e 's/{0,[0-9]*}/*/g' -e 's/{1,[0-9]*}/+/g' "$here/download-pattern.txt" 2>/dev/null)
 [ -n "$pattern" ] || not_checked "the plugin's pattern file is missing"
 soh=$(printf '\001')
 plain=$(printf '%s\n' "$command" | sed -e 's/\\\\/'"$soh"'/g' -e 's/'"$soh"'\\n//g' -e 's/`\\n//g' -e 's/\\[nr]/ ; /g' -e 's/\\[tbf]/ /g' \

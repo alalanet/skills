@@ -36,7 +36,11 @@ const WRAP = "(" + PFX + "(" + alt(["sudo", "doas", "env", "exec", "command", "n
 const BLOCK = "((%|" + w("foreach-object") + "|" + w("where-object") + "|&|\\.)?([\\s]{1,40}-[a-z]{1,40}){0,4}[\\s]{0,40}\\{([^;{}|]{0,255}[;{]){0,8}[\\s]{0,40})";
 const CMD = S + "(" + BLOCK + S + ")?" + ASSIGN + "(" + WRAP + S + ")?" + PFX;
 // (a) a download piped into a runner in the same statement: curl … | sh, irm … | % { iex $_ }
-const a = "(^|[^a-z0-9_])" + D + E + "[^;]{0,255}[;\\s]{0,40}\\|" + CMD + "(" + RS + E + "|" + RI + TI + ")";
+// between the download and the pipe: the rest of the statement, a quoted part whole (curl "https://e.example/x;y" | sh);
+// the quotes that end the download's word (irm"" U, 'irm' U) are its own (N), and one quote may close a string the
+// download stood in (echo "$(curl …)" | sh)
+const GAP = "(\"[^\"]{0,255}\"|'[^']{0,255}'|[^;\"']){0,255}([\"'][^;\"']{0,255})?";
+const a = "(^|[^a-z0-9_])" + D + N + E + GAP + "[;\\s]{0,40}\\|" + CMD + "(" + RS + E + "|" + RI + TI + ")";
 // (b) a runner given a download in a substitution, a group or a here-string: sh -c "$(curl …)", bash <(curl …), iex (irm …)
 const OPEN = "(\\$\\(|<\\(|`|\\(|@['\"])";
 const b = "(^|[|;&({}`\\[>]|(" + alt(["then", "do", "else"]) + ")[\\s])" + CMD + R + "([^a-z0-9_;|-][^;|]{0,40})?" + OPEN +

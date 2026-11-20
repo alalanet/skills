@@ -216,8 +216,8 @@ try {
 # on stderr that it was not checked (could not be reached), and a line it keeps leaves no trace: nothing printed,
 # nothing on stderr, exit 0. The workspace's planted powershell programs never run.
 $claude = (Get-Content -Raw (Join-Path $plugin 'hooks/hooks.json') | ConvertFrom-Json).hooks.PreToolUse[0].hooks
-$dlCommand = ($claude | Where-Object { $_.if -eq 'PowerShell(irm *)' }).command
-Check 'download hook' 'the PowerShell rule is a command hook in the PowerShell Claude Code starts' (($claude | Where-Object { $_.if -eq 'PowerShell(irm *)' }).shell -eq 'powershell') ''
+$dlCommand = ($claude | Where-Object { $_.if -eq 'PowerShell(Invoke-RestMethod *)' }).command
+Check 'download hook' 'the PowerShell rule is a command hook in the PowerShell Claude Code starts' (($claude | Where-Object { $_.if -eq 'PowerShell(Invoke-RestMethod *)' }).shell -eq 'powershell') ''
 function Invoke-Download([string]$file, [string]$command) {
   Get-ChildItem -LiteralPath $mark -File | Remove-Item -Force
   $psi = [Diagnostics.ProcessStartInfo]::new($file)

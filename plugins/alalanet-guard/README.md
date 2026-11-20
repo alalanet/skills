@@ -51,7 +51,9 @@ and no Node.js or Python is needed.
 **Downloads that run (from 1.5.1).** Claude Code runs a hook when any part of a command matches its rule, so an HTTP
 rule for `curl` would send every curl line, API calls with their tokens included. The download commands (`curl`,
 `wget`, `irm`, `iwr`, `iex`, `Invoke-RestMethod`, `Invoke-WebRequest`, `Invoke-Expression`, and `curl.exe`,
-`wget.exe`) therefore have a local command hook instead: `scripts/download-guard` (`/bin/sh`, with `sed`, `grep`,
+`wget.exe`; in the Bash tool also as `Curl`, `CURL`, `Irm`, `IRM` and the like, since its rules match as written; in
+the PowerShell tool by the cmdlet names, since there Claude Code matches case-insensitively and reads `irm`, `iwr` and
+`iex` as their cmdlets) therefore have a local command hook instead: `scripts/download-guard` (`/bin/sh`, with `sed`, `grep`,
 `awk` and `curl`) in the Bash tool, `scripts/download-guard.ps1` in the PowerShell tool. It reads only the command and
 sends it, whole and as typed, only when a download in it feeds something that runs it: piped into a shell or an
 interpreter that runs its input (`curl … | sh`, `… | sudo bash -s`, `… | python3 -`, `irm … | iex`,
@@ -64,7 +66,9 @@ longer than 64 KiB is not read and is held for you, unsent. The request carries 
 `{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"…"}}` (or `"PowerShell"`), the
 `ALALANET_DEVICE_KEY` and `ALALANET_TOKEN` you set, and the User-Agent `alalanet-guard/<version> (hook claude-code
 download)`; alalanet reads the line in memory and keeps no command line. A download saved to a file and run later
-(`curl -o i.sh …; sh i.sh`) is not caught by this filter; alalanet-agent's hook reads those.
+(`curl -o i.sh …; sh i.sh`) is not caught by this filter; alalanet-agent's hook reads those. A line that names two of these
+words (`irm … | iex`) matches two rules, and Claude Code may start the hook once for each: each run sends the same
+line and gets the same answer, so the decision is the same; only the check is made twice.
 
 alalanet answers in the standard hook format: `deny` on block, `ask` on hold, and an empty answer on
 allow. When alalanet cannot check (a registry or OSV outage, your daily check quota) it answers `ask`
