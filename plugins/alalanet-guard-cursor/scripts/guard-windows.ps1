@@ -16,7 +16,7 @@
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-$Version = '1.0.0'
+$Version = '1.1.0'
 $DeadlineMs = 18000
 $MaxAnswer = 65536
 $Api = 'https://alalanet.com'

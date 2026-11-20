@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "alalanet-guard",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Checks the install commands a coding agent is about to run (npm, PyPI, MCP servers, agent skills, editor extensions) before they run: known malicious packages (OSV), typosquats of official MCP servers, package names that do not exist, install scripts, maintainer changes. Block stops the command, hold asks the user. The hook needs the alalanet-agent binary on PATH (https://alalanet.com/dl); without it nothing is checked and the runtime says so. Adds the read-only alalanet guard MCP server.",
   "author": {
     "name": "alalanet",

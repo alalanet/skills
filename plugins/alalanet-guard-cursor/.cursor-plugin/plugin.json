@@ -1,7 +1,7 @@
 {
   "name": "alalanet-guard",
   "displayName": "alalanet guard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Before your agent runs an install command (npm, npx, pnpm, yarn, bun, pip, uv, uvx, pipx, MCP servers, skills, IDE extensions), alalanet checks what it installs: known malicious packages (OSV), typosquats of official MCP servers, names that do not exist, install scripts, maintainer changes. Block and hold stop the command with the reason. Only the install command line is sent. Plus alalanet's read-only MCP checks.",
   "author": {
     "name": "alalanet",

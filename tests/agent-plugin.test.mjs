@@ -184,6 +184,28 @@ test("Codex commandWindows: powershell.exe by full path, nothing resolved by a b
   assert.doesNotMatch(c, /\|\||&&/);
 });
 
+test("Claude Code's install hook sends the free device key and the plan token from the environment, nothing else", () => {
+  const hooks = load(path.join(plugin, "hooks", "hooks.json"));
+  const http = Object.values(hooks.hooks).flat().flatMap((m) => m.hooks).filter((h) => h.type === "http");
+  assert.ok(http.length > 0, "the plugin has http hooks");
+  for (const h of http) {
+    assert.equal(new URL(h.url).origin, "https://alalanet.com", h.url);
+    assert.deepEqual(h.headers, { "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY", "Authorization": "Bearer $ALALANET_TOKEN" }, h.if);
+    assert.deepEqual(h.allowedEnvVars, ["ALALANET_DEVICE_KEY", "ALALANET_TOKEN"], h.if);
+  }
+});
+
+test("the Cursor hook sends the device key only when it reads as one", () => {
+  const sh = readFileSync(path.join(repo, "plugins", "alalanet-guard-cursor", "scripts", "guard"), "utf8");
+  assert.match(sh, /case \$key in ald_\*\) ;; \*\) key= ;; esac/);
+  assert.match(sh, /\[ -n "\$key" \] && set -- -H "X-Alalanet-Device-Key: \$key"/);
+  const ps = readFileSync(path.join(repo, "plugins", "alalanet-guard-cursor", "scripts", "guard-windows.ps1"), "utf8");
+  assert.match(ps, /-cmatch '\^ald_\[a-z0-9_\]\{1,124\}\$'/);
+  const v = load(path.join(repo, "plugins", "alalanet-guard-cursor", ".cursor-plugin", "plugin.json")).version;
+  assert.match(sh, new RegExp(`^VERSION=${v.replaceAll(".", "\\.")}$`, "m"), "the script's version is the manifest's");
+  assert.ok(ps.includes(`$Version = '${v}'`), "the PowerShell script's version is the manifest's");
+});
+
 test("Claude Code's files are untouched by the Agent Plugins layout", () => {
   for (const f of [".claude-plugin/plugin.json", ".mcp.json", "hooks/hooks.json"]) assert.ok(existsSync(path.join(plugin, f)), f);
   assert.ok(!existsSync(path.join(plugin, ".codex-plugin")), "extensions.com.openai replaces a .codex-plugin overlay");

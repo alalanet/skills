@@ -51,7 +51,7 @@ allow. When alalanet cannot check (a registry or OSV outage, your daily check qu
 with the reason, never a silent allow. If it does not answer within 20 seconds, the hook does
 nothing and your normal permission flow applies.
 
-**1,000 checks a day: a free device key.** Without a key the hook shares your address's 100 free checks a day
+**1,000 checks a day: a free device key** (from version 1.5.0). Without a key the hook shares your address's 100 free checks a day
 with every other way you call alalanet (the API, the MCP servers). With a free device key it has 1,000 a day of its
 own, and your address gets no more hook checks than that however many keys it holds. Claude Code gives a plugin
 no step at install time, and an HTTP hook's headers can carry only environment variables the hook lists

@@ -80,6 +80,8 @@ with `User-Agent: alalanet-guard-cursor/<version> (hook cursor)` and, if you set
 
 ## 1,000 checks a day: a free device key
 
+From version 1.1.0.
+
 Without a key the hook shares your address's 100 free checks a day with every other way you call alalanet. With a
 free device key it has 1,000 a day of its own (and your address gets no more hook checks than that, however many
 keys it holds). Get one once, with no sign-up (the key is random and bound to nothing), and put it in the environment
