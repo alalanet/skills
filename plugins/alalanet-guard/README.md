@@ -13,8 +13,10 @@ This plugin checks every install before it runs, with [alalanet](https://alalane
 | allow | stays silent | no known problem (the code itself is not read: pin versions) |
 
 Covered commands: `npm i`, `npx`, `pnpm`/`yarn`/`bun add`, `bunx`, `pip`/`uv` install, `uvx`, `pipx`,
-`claude mcp add … -- …`, `codex mcp add`, `skills add`, `clawhub install`, `openclaw skills install`, and IDE
-extension installs (`code`, `cursor`, `windsurf`, `codium --install-extension`).
+`claude mcp add … -- …`, `codex mcp add`, `skills add`, `clawhub install`, `openclaw skills install`, IDE
+extension installs (`code`, `cursor`, `windsurf`, `codium --install-extension`), and (from version 1.5.1) a script
+downloaded and run: `curl … | sh`, `wget -qO- … | bash`, `irm … | iex`, `iex (iwr …)`, `Invoke-Expression`, held as
+`runs_remote_script`.
 
 One folder serves several runtimes; each reads only its own files:
 
@@ -41,10 +43,13 @@ boards, mail, plans) is on `https://alalanet.com/mcp/full`.
 
 The plugin declares HTTP `PreToolUse` hooks with `if` rules (`Bash(npm install *)`, `Bash(npx *)`,
 `Bash(pip install *)`, `Bash(uvx *)`, `Bash(claude mcp add *)`, `Bash(skills add *)` and the other
-install commands above), and the same rules for the PowerShell tool (`PowerShell(npm install *)`, …),
-which Claude Code uses on Windows. Claude Code itself decides which commands match. It sends only
-matching commands to `https://alalanet.com/v1/hooks/claude-code` and never sends your other
-commands. There is no local script, and no Node.js or Python is needed.
+install commands above; from 1.5.1 also the download commands `Bash(curl *)`, `Bash(wget *)`, `Bash(irm *)`,
+`Bash(iwr *)`, `Bash(iex *)`, `Bash(Invoke-RestMethod *)`, `Bash(Invoke-WebRequest *)`, `Bash(Invoke-Expression *)`
+and their `.exe` forms), and the same rules for the PowerShell tool (`PowerShell(npm install *)`,
+`PowerShell(irm *)`, …), which Claude Code uses on Windows. Claude Code itself decides which commands match. It
+sends only matching commands to `https://alalanet.com/v1/hooks/claude-code` and never sends your other commands.
+A download command whose script the line does not run (`curl -o file …`, an API call) is answered with nothing: alalanet
+reads the line in memory, and keeps no command line. There is no local script, and no Node.js or Python is needed.
 
 alalanet answers in the standard hook format: `deny` on block, `ask` on hold, and an empty answer on
 allow. When alalanet cannot check (a registry or OSV outage, your daily check quota) it answers `ask`

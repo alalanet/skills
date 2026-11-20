@@ -487,6 +487,156 @@
           {
             "type": "http",
             "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(curl *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(curl.exe *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(wget *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(wget.exe *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(irm *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(iwr *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(iex *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(Invoke-RestMethod *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(Invoke-WebRequest *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "Bash(Invoke-Expression *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
             "if": "PowerShell(npm install *)",
             "timeout": 20,
             "statusMessage": "alalanet: checking the install",
@@ -955,6 +1105,171 @@
             "if": "PowerShell(openclaw skills install *)",
             "timeout": 20,
             "statusMessage": "alalanet: checking the install",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(curl *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(curl.exe *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(wget *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(wget.exe *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(irm *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(iwr *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(iex *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(Invoke-RestMethod *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(Invoke-WebRequest *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(Invoke-Expression *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
+            "headers": {
+              "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
+              "Authorization": "Bearer $ALALANET_TOKEN"
+            },
+            "allowedEnvVars": [
+              "ALALANET_DEVICE_KEY",
+              "ALALANET_TOKEN"
+            ]
+          },
+          {
+            "type": "http",
+            "url": "https://alalanet.com/v1/hooks/claude-code",
+            "if": "PowerShell(IEX *)",
+            "timeout": 20,
+            "statusMessage": "alalanet: checking the download",
             "headers": {
               "X-Alalanet-Device-Key": "$ALALANET_DEVICE_KEY",
               "Authorization": "Bearer $ALALANET_TOKEN"
