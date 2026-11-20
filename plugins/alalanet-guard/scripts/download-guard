@@ -1,0 +1,124 @@
+#!/bin/sh
+# alalanet guard: Claude Code's hook for the download commands (curl, wget, irm, iwr, Invoke-RestMethod,
+# Invoke-WebRequest, iex, Invoke-Expression) in the Bash tool. hooks/hooks.json runs it for a command in which one of
+# them is a subcommand; Windows' PowerShell tool runs download-guard.ps1 instead.
+#
+# Claude Code sends the hook input on stdin. This script reads only its tool_input.command. It sends that command line,
+# as typed and nothing else, to alalanet's install check only when a download in it feeds a runner: piped into a shell
+# or an interpreter that runs its input (… | sh, … | bash -s, … | python3 -, … | iex, … | & 'iex', … | % { iex $_ }),
+# or given to one in a substitution or a group (sh -c "$(curl …)", bash <(curl …), eval "$(curl …)", iex (irm …),
+# [scriptblock]::Create((irm …))), with the quotes, backticks and backslashes between the letters that the shells
+# remove. Every other command — an API call, a download saved to a file, a download piped into jq or into
+# python3 -m json.tool — stays on the machine: nothing is sent, nothing is printed. The pattern is
+# scripts/download-pattern.txt, the same text download-guard.ps1 reads.
+#
+# It prints Claude Code's answer on stdout: block -> permissionDecision "deny" with alalanet's reason; hold -> "ask";
+# nothing on allow. When alalanet cannot be reached, answers an error, or does not answer in full within 20 seconds,
+# the command goes ahead unchecked, with one line on stderr, as Claude Code's HTTP hooks do.
+#
+# Needs only sh, sed, tr, grep, awk, wc and curl. Source: https://github.com/alalanet/skills (MIT-0).
+
+VERSION=1.5.1
+API=${ALALANET_API:-https://alalanet.com}
+API=${API%/}
+MAX_ANSWER=65536
+ENVELOPE=79 # bytes of {"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":""}}
+
+# decide decision reason: Claude Code's answer (reason still JSON-escaped), and the end.
+decide() {
+	printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"%s","permissionDecisionReason":"%s"}}\n' "$1" "$2"
+	exit 0
+}
+
+# not_checked why: alalanet did not check the command; it goes ahead.
+not_checked() {
+	echo "alalanet guard: this download-and-run command was not checked ($1); it goes ahead." >&2
+	exit 0
+}
+
+# string_field name: "=" and the raw (still JSON-escaped) value of the first "name": "..." string on stdin, which is
+# one line; nothing when there is none.
+string_field() {
+	awk -v key="$1" '{
+		if (match($0, "\"" key "\"[ \t]*:[ \t]*\"([^\"\\\\]|\\\\.)*\"")) {
+			s = substr($0, RSTART, RLENGTH)
+			sub("^\"" key "\"[ \t]*:[ \t]*\"", "", s)
+			print "=" substr(s, 1, length(s) - 1)
+		}
+	}'
+}
+
+# The command, still JSON-escaped: it is sent as it came. JSON strings hold no raw line breaks, so the input is one
+# line once they are removed.
+input=$(tr -d '\r\n')
+command=$(printf '%s' "$input" | string_field command)
+[ -n "$command" ] || exit 0 # not a shell command
+command=${command#=}
+
+# The filter reads the command's text: the JSON escapes read back in one pass (\\ first, through a byte JSON never
+# leaves raw), a backslash-newline (a POSIX shell's) or backtick-newline (PowerShell's) removed, a newline as a separator (" ; "), other control
+# characters as spaces. Every \s of the pattern is inside brackets, so [:space:] replaces it.
+here=$(dirname "$0")
+pattern=$(sed -e 's/\\s/[:space:]/g' "$here/download-pattern.txt" 2>/dev/null)
+[ -n "$pattern" ] || not_checked "the plugin's pattern file is missing"
+soh=$(printf '\001')
+plain=$(printf '%s\n' "$command" | sed -e 's/\\\\/'"$soh"'/g' -e 's/'"$soh"'\\n//g' -e 's/`\\n//g' -e 's/\\[nr]/ ; /g' -e 's/\\[tbf]/ /g' \
+	-e 's/\\u[0-9a-fA-F]\{4\}/ /g' -e 's/\\"/"/g' -e 's/\\\//\//g' -e 's/'"$soh"'/\\/g')
+# The pattern is read on lines up to 64 KiB (its bounded quantifiers keep it fast there in every engine); a longer
+# line is held for the user here, and not sent.
+plain_bytes=$(printf '%s' "$plain" | LC_ALL=C wc -c | tr -d ' ')
+if [ "$plain_bytes" -gt 65536 ]; then
+	decide ask "alalanet install_check: NOT CHECKED — a download command line longer than 64 KiB is not read on this machine and was not sent. Run it only if the user confirms."
+fi
+printf '%s\n' "$plain" | grep -Eiq -- "$pattern" || exit 0
+
+if ! printf '%s\n' "$API" | grep -Eq '^(https://|http://(127\.0\.0\.1|localhost):[0-9]+(/|$))'; then
+	not_checked "ALALANET_API is not an https URL (plain http only to 127.0.0.1 or localhost)"
+fi
+bytes=$(printf '%s' "$command" | LC_ALL=C wc -c | tr -d ' ')
+if [ "$bytes" -gt $((1048576 - ENVELOPE)) ]; then
+	decide ask "alalanet install_check: NOT CHECKED — the command is too large for alalanet to read. Run it only if the user confirms."
+fi
+command -v curl >/dev/null 2>&1 || not_checked "curl is not installed"
+
+# The hook's free device key (ALALANET_DEVICE_KEY) and the plan token (ALALANET_TOKEN), as the HTTP hooks send them;
+# each only when it reads as one.
+key=${ALALANET_DEVICE_KEY:-}
+case $key in ald_*) ;; *) key= ;; esac
+case $key in *[!a-z0-9_]*) key= ;; esac
+token=${ALALANET_TOKEN:-}
+case $token in *[!A-Za-z0-9._~+/=-]*) token= ;; esac
+set --
+[ -n "$key" ] && set -- "$@" -H "X-Alalanet-Device-Key: $key"
+[ -n "$token" ] && set -- "$@" -H "Authorization: Bearer $token"
+
+dir=$(mktemp -d 2>/dev/null) || not_checked "no temporary folder for the answer"
+trap 'rm -rf "$dir"' EXIT
+: > "$dir/body" # curl writes no file for an empty answer
+rc=0
+code=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s"}}' "$command" |
+	curl -q -g -sS --proto '=https,http' --max-time 20 --max-filesize "$MAX_ANSWER" -X POST \
+		-H 'Content-Type: application/json' -A "alalanet-guard/$VERSION (hook claude-code download)" "$@" \
+		-o "$dir/body" --data-binary @- -w '%{http_code}' "$API/v1/hooks/claude-code" 2>/dev/null) || rc=$?
+case $rc in
+0) ;;
+28) not_checked "alalanet did not answer in full within 20 seconds" ;;
+63) not_checked "alalanet's answer is larger than $MAX_ANSWER bytes" ;;
+6 | 7) not_checked "alalanet could not be reached" ;;
+*) not_checked "the request to alalanet failed (curl exit $rc)" ;;
+esac
+[ "$code" = 200 ] || not_checked "alalanet answered HTTP ${code:-none}"
+size=$(LC_ALL=C wc -c < "$dir/body" | tr -d ' ')
+[ "$size" -le "$MAX_ANSWER" ] || not_checked "alalanet's answer is larger than $MAX_ANSWER bytes"
+body=$(tr -d '\r\n' < "$dir/body")
+[ -n "$(printf '%s' "$body" | tr -d ' \t')" ] || exit 0 # allow: nothing to say
+
+decision=$(printf '%s' "$body" | string_field permissionDecision)
+decision=${decision#=}
+reason=$(printf '%s' "$body" | string_field permissionDecisionReason)
+reason=${reason#=}
+case $decision in
+deny) decide deny "${reason:-alalanet install_check: BLOCK. Do not run it; tell the user.}" ;;
+ask) decide ask "${reason:-alalanet install_check: HOLD. Run it only if the user confirms.}" ;;
+esac
+not_checked "alalanet's answer could not be read"

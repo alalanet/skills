@@ -50,4 +50,4 @@ jobs:
       - name: shellcheck of the POSIX forms
         run: |
           node tests/extract-posix-hooks.mjs "$RUNNER_TEMP/hooks"
-          shellcheck "$RUNNER_TEMP/hooks/copilot.sh" "$RUNNER_TEMP/hooks/codex.sh" "$RUNNER_TEMP/hooks/codex-inner.sh"
+          shellcheck "$RUNNER_TEMP/hooks/copilot.sh" "$RUNNER_TEMP/hooks/codex.sh" "$RUNNER_TEMP/hooks/codex-inner.sh" plugins/alalanet-guard/scripts/download-guard
