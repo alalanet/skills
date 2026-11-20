@@ -88,13 +88,21 @@ bytes=$(printf '%s' "$command" | LC_ALL=C wc -c | tr -d ' ')
 [ "$bytes" -le $((1048576 - ENVELOPE)) ] || hold "the command is too large for alalanet to read" # the server reads 1 MiB
 command -v curl >/dev/null 2>&1 || not_checked "curl is not installed"
 
+# The hook's free device key (ALALANET_DEVICE_KEY, from POST https://alalanet.com/v1/device-keys): the hook's own 1,000
+# checks a day; without it the hook shares the address's 100 a day. Sent only when it reads as a key.
+key=${ALALANET_DEVICE_KEY:-}
+case $key in ald_*) ;; *) key= ;; esac
+case $key in *[!a-z0-9_]*) key= ;; esac
+set --
+[ -n "$key" ] && set -- -H "X-Alalanet-Device-Key: $key"
+
 dir=$(mktemp -d 2>/dev/null) || not_checked "no temporary folder for the answer"
 trap 'rm -rf "$dir"' EXIT
 : > "$dir/body" # curl writes no file for an empty answer
 rc=0
 code=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s"}}' "$command" |
 	curl -q -g -sS --proto '=https,http' --max-time 20 --max-filesize "$MAX_ANSWER" -X POST \
-		-H 'Content-Type: application/json' -A "alalanet-guard-cursor/$VERSION (hook cursor)" \
+		-H 'Content-Type: application/json' -A "alalanet-guard-cursor/$VERSION (hook cursor)" "$@" \
 		-D "$dir/headers" -o "$dir/body" --data-binary @- -w '%{http_code}' "$API/v1/hooks/claude-code" 2>/dev/null) || rc=$?
 case $rc in
 0) ;;

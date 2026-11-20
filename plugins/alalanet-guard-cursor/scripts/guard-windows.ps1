@@ -98,6 +98,9 @@ try {
 	$client.Timeout = [TimeSpan]::FromMilliseconds($DeadlineMs)
 	$null = $client.DefaultRequestHeaders.TryAddWithoutValidation('User-Agent', "alalanet-guard-cursor/$Version (hook cursor)")
 	$request = New-Object System.Net.Http.HttpRequestMessage([System.Net.Http.HttpMethod]::Post, "$Api/v1/hooks/claude-code")
+	# the hook's free device key (ALALANET_DEVICE_KEY): its own 1,000 checks a day; sent only when it reads as a key
+	$deviceKey = "$env:ALALANET_DEVICE_KEY".Trim()
+	if ($deviceKey -cmatch '^ald_[a-z0-9_]{1,124}$') { $null = $request.Headers.TryAddWithoutValidation('X-Alalanet-Device-Key', $deviceKey) }
 	$request.Content = New-Object System.Net.Http.ByteArrayContent(, [Text.Encoding]::ASCII.GetBytes($body))
 	$request.Content.Headers.ContentType = New-Object System.Net.Http.Headers.MediaTypeHeaderValue('application/json')
 	# headers first; the body is read below, counted byte by byte

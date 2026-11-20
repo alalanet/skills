@@ -51,6 +51,21 @@ allow. When alalanet cannot check (a registry or OSV outage, your daily check qu
 with the reason, never a silent allow. If it does not answer within 20 seconds, the hook does
 nothing and your normal permission flow applies.
 
+**1,000 checks a day: a free device key.** Without a key the hook shares your address's 100 free checks a day
+with every other way you call alalanet (the API, the MCP servers). With a free device key it has 1,000 a day of its
+own, and your address gets no more hook checks than that however many keys it holds. Claude Code gives a plugin
+no step at install time, and an HTTP hook's headers can carry only environment variables the hook lists
+(`headers` with `allowedEnvVars`, code.claude.com/docs/en/hooks), so the key is one step of yours, once:
+
+```sh
+curl -s -X POST https://alalanet.com/v1/device-keys   # prints {"device_key":"ald_…", …}; no sign-up, bound to nothing
+```
+
+then set `ALALANET_DEVICE_KEY` to it where Claude Code starts (your shell profile, or `"env"` in
+`~/.claude/settings.json`). The hook sends it as `X-Alalanet-Device-Key`. With a plan, set `ALALANET_TOKEN` to your
+plan token instead: the hook sends it as `Authorization: Bearer`, and its checks are your plan's one daily allowance.
+An unset variable sends an empty header, which alalanet reads as none.
+
 ## GitHub Copilot CLI, VS Code and Codex
 
 These runtimes run the check through `alalanet-agent`, alalanet's open-source (Apache-2.0) client. Install it
@@ -149,6 +164,8 @@ Claude Code:
   hook fields (session id, working directory, transcript path).
 - alalanet reads only `tool_name` and the command. It extracts the package names or repository URLs
   and checks them. It does not store or log the command line or the other fields.
+- With `ALALANET_DEVICE_KEY` or `ALALANET_TOKEN` set, the hook also sends that key or token in a header
+  (`X-Alalanet-Device-Key`, `Authorization`). alalanet stores neither the device key nor anything about who holds it.
 
 Copilot, VS Code and Codex, through alalanet-agent (from its README, "What leaves the machine"): "Only the command
 line, and only when it installs or runs a package. It goes as
@@ -162,7 +179,7 @@ Both:
 - The command line is sent whole, as typed. If it carries a token (`-e GITHUB_TOKEN=…`, a URL with
   a password such as `--index-url https://user:token@host/simple`) or file text (a heredoc that writes a file),
   that goes too. alalanet does not store or log it. Nothing else of yours is sent: no other files and no
-  environment. No account or key is needed.
+  environment beyond the key or token you set for the hook. No account is needed; the free device key is optional.
 - Verdicts (target, decision, reasons) are signed into alalanet's public transparency log, without
   anything about who asked.
 - A remote MCP server named in a checked `… mcp add` line, or checked with the MCP tools, that no catalogue lists

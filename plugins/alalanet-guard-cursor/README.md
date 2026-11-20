@@ -74,13 +74,29 @@ pattern again, and sends the whole line, as typed, to `https://alalanet.com/v1/h
 {"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"<the command line>"}}
 ```
 
-with `User-Agent: alalanet-guard-cursor/<version> (hook cursor)`. It prints Cursor's answer
+with `User-Agent: alalanet-guard-cursor/<version> (hook cursor)` and, if you set `ALALANET_DEVICE_KEY`, the header
+`X-Alalanet-Device-Key`. It prints Cursor's answer
 (`{"permission":"deny","user_message":…,"agent_message":…}` on block and hold, `{"permission":"allow"}` otherwise).
+
+## 1,000 checks a day: a free device key
+
+Without a key the hook shares your address's 100 free checks a day with every other way you call alalanet. With a
+free device key it has 1,000 a day of its own (and your address gets no more hook checks than that, however many
+keys it holds). Get one once, with no sign-up (the key is random and bound to nothing), and put it in the environment
+Cursor runs in:
+
+```sh
+curl -s -X POST https://alalanet.com/v1/device-keys   # prints {"device_key":"ald_…", …}
+export ALALANET_DEVICE_KEY=ald_…                      # e.g. in ~/.zshenv; on Windows: setx ALALANET_DEVICE_KEY ald_…
+```
+
+A value that does not read as a key (`ald_` and lowercase letters, digits, `_`) is not sent.
 
 ## When alalanet cannot check
 
 - alalanet does not answer in full within 20 seconds (18 on Windows), cannot be reached, answers an error or an
-  answer over 64 KiB, or the daily limit for your address (1,000 checks) is spent: the command goes ahead
+  answer over 64 KiB, or the daily limit is spent (without a device key, your address's 100 checks a day, shared with
+  every other way you call alalanet; with one, 1,000 a day): the command goes ahead
   unchecked, and the script writes one line on stderr (the **Hooks** output channel). This is the same as
   without the plugin.
 - Set `ALALANET_FAIL_CLOSED=1` in the environment Cursor runs in to hold such commands instead (denied with
