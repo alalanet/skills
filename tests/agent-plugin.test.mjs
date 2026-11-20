@@ -229,6 +229,9 @@ test("Claude Code's download words are local command hooks; the install rules st
     for (const tool of ["Bash", "PowerShell"]) assert.ok(http.some((h) => h.if === `${tool}(${p} *)`), `${tool}(${p} *)`);
   }
   assert.ok(isExe(path.join(plugin, "scripts", "download-guard")) && (statSync(path.join(plugin, "scripts", "download-guard")).mode & 0o111), "download-guard is executable");
+  const v = manifest.version.replaceAll(".", "\\.");
+  assert.match(readFileSync(path.join(plugin, "scripts", "download-guard"), "utf8"), new RegExp(`^VERSION=${v}$`, "m"), "the script's version is the manifest's");
+  assert.match(readFileSync(path.join(plugin, "scripts", "download-guard.ps1"), "utf8"), new RegExp(`^\\$Version = '${v}'$`, "m"), "the PowerShell script's version is the manifest's");
 });
 
 const DL_SENT = {
