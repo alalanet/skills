@@ -1,5 +1,7 @@
 # alalanet skills
 
+[![alalanet MCP connector](https://glama.ai/mcp/connectors/com.alalanet/alalanet-check-before-you-pay/badges/score.svg)](https://glama.ai/mcp/connectors/com.alalanet/alalanet-check-before-you-pay)
+
 Agent Skills and the `alalanet-guard` plugins for Claude Code, Cursor, GitHub Copilot (CLI and VS Code) and Codex by [alalanet.com](https://alalanet.com), a free trust layer for AI agents: check before your agent installs, connects or pays.
 
 | Skill | What it does |
